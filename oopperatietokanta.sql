@@ -97,4 +97,20 @@ create table ryhma_esitys_kombinaatio (
 	constraint ryhma_esitys_kombinaatio_pkey primary key (ryhma_id, esitys_id)
 );
 
+/* Luodaan tauluille foreign key -rajoitteet */
 
+alter table rooli add constraint rooli_fkey_ooppera_id foreign key references ooppera_id ooppera(ooppera_id);
+
+alter table oopperaesitys add constraint oopperaesitys_fkey_ooppera_id foreign key ooppera_id references ooppera(ooppera_id);
+
+alter table oopperaesitys add constraint oopperaesitys_fkey_talo_id foreign key talo_id references oopperatalo(talo_id);
+
+alter table rse_kombinaatio add constraint rse_kombinaatio_fkey_rooli_id foreign key rooli_id references rooli(rooli_id);
+
+alter table rse_kombinaatio add constraint rse_kombinaatio_fkey_esitys_id foreign key esitys_id references oopperaesitys(esitys_id);
+
+alter table rse_kombinaatio add constraint rse_kombinaatio_fkey_henkilo_id foreign key henkilo_id references henkilo(henkilo_id);
+
+alter table ryhma_esitys_kombinaatio add constraint ryhma_esitys_kombinaatio_fkey_ryhma_id foreign key ryhma_id references ryhma(ryhma_id);
+
+alter table ryhma_esitys_kombinaatio add constraint ryhma_esitys_kombinaatio_fkey_esitys_id foreign key esitys_id references oopperaesitys(esitys_id);
