@@ -1,6 +1,6 @@
 /*Luodaan sekvenssi 'oop_id' automaattiseen ooppera-taulun pääavaimen generoimiseen.*/
 
-create sequence oop_id start with 0 increment by 1;
+create sequence oop_id start with 1 increment by 1;
 
 /* Luodaan ooppera-taulu */
 
@@ -13,7 +13,7 @@ create table ooppera (
 
 /* Luodaan sekvenssi rool_id' automaattiseen rooli-taulun pääavaimen generoimiseen.*/
 
-create sequence rool_id start with 0 increment by 1;
+create sequence rool_id start with 1 increment by 1;
 
 /* Luodaan rooli-taulu*/
 
@@ -27,7 +27,7 @@ create table rooli (
 
 /* Luodaan sekvenssi 'es_id' automaattiseen oopperaesitys-taulun pääavaimen generoimiseen.*/
 
-create sequence es_id start with 0 increment by 1;
+create sequence es_id start with 1 increment by 1;
 
 /*Luodaan oopperaesitys-taulu*/
 
@@ -42,20 +42,20 @@ create table oopperaesitys (
 
 /* Luodaan sekvenssi 'tal_id' automaattiseen oopperatalo-taulun pääavaimen generointiin.*/
 
-create sequence tal_id start with 0 increment by 1;
+create sequence tal_id start with 1 increment by 1;
 
 /* Luodaan oopperatalo-taulu */
 
 create table oopperatalo (
 	talo_id integer default nextval('tal_id'),
 	ooptalonnimi varchar (40) default null,
-	ooptalonsijainti varcha (40) default null,
+	ooptalonsijainti varchar (40) default null,
 	constraint oopperatalo_pkey primary key (talo_id)
 );
 
 /* Luodaan sekvenssi henk_id henkilo-taulun pääavaimen automaattiseen generointiin. */
 
-create sequence henk_id start with 0 increment by 1;
+create sequence henk_id start with 1 increment by 1;
 
 /* Luodaan henkilo-taulu */
 
@@ -69,7 +69,7 @@ create table henkilo (
 
 /* Luodaan sekvenssi 'ryhm_id' automaattiseen ryhma-taulun pääavaimen generoimiseen. */
 
-create sequence ryhm_id start with 0 increment by 1;
+create sequence ryhm_id start with 1 increment by 1;
 
 /* Luodaan ryhma-taulu */
 
@@ -99,18 +99,18 @@ create table ryhma_esitys_kombinaatio (
 
 /* Luodaan tauluille foreign key -rajoitteet */
 
-alter table rooli add constraint rooli_fkey_ooppera_id foreign key references ooppera_id ooppera(ooppera_id);
+alter table rooli add constraint rooli_fkey_ooppera_id foreign key (ooppera_id) references ooppera(ooppera_id);
 
-alter table oopperaesitys add constraint oopperaesitys_fkey_ooppera_id foreign key ooppera_id references ooppera(ooppera_id);
+alter table oopperaesitys add constraint oopperaesitys_fkey_ooppera_id foreign key (ooppera_id) references ooppera(ooppera_id);
 
-alter table oopperaesitys add constraint oopperaesitys_fkey_talo_id foreign key talo_id references oopperatalo(talo_id);
+alter table oopperaesitys add constraint oopperaesitys_fkey_talo_id foreign key (talo_id) references oopperatalo(talo_id);
 
-alter table rse_kombinaatio add constraint rse_kombinaatio_fkey_rooli_id foreign key rooli_id references rooli(rooli_id);
+alter table rse_kombinaatio add constraint rse_kombinaatio_fkey_rooli_id foreign key (rooli_id) references rooli(rooli_id);
 
-alter table rse_kombinaatio add constraint rse_kombinaatio_fkey_esitys_id foreign key esitys_id references oopperaesitys(esitys_id);
+alter table rse_kombinaatio add constraint rse_kombinaatio_fkey_esitys_id foreign key (esitys_id) references oopperaesitys(esitys_id);
 
-alter table rse_kombinaatio add constraint rse_kombinaatio_fkey_henkilo_id foreign key henkilo_id references henkilo(henkilo_id);
+alter table rse_kombinaatio add constraint rse_kombinaatio_fkey_henkilo_id foreign key (henkilo_id) references henkilo(henkilo_id);
 
-alter table ryhma_esitys_kombinaatio add constraint ryhma_esitys_kombinaatio_fkey_ryhma_id foreign key ryhma_id references ryhma(ryhma_id);
+alter table ryhma_esitys_kombinaatio add constraint ryhma_esitys_kombinaatio_fkey_ryhma_id foreign key (ryhma_id) references ryhma(ryhma_id);
 
-alter table ryhma_esitys_kombinaatio add constraint ryhma_esitys_kombinaatio_fkey_esitys_id foreign key esitys_id references oopperaesitys(esitys_id);
+alter table ryhma_esitys_kombinaatio add constraint ryhma_esitys_kombinaatio_fkey_esitys_id foreign key (esitys_id) references oopperaesitys(esitys_id);
