@@ -22,6 +22,7 @@ create table rooli (
 	ooppera_id integer not null,
 	roolinimi varchar (40) default null,
 	aaniala varchar (40) default null,
+	esiintyja boolean default FALSE,
 	constraint rooli_pkey primary key (rooli_id)
 );
 
