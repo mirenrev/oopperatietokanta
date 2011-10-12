@@ -16,6 +16,11 @@ def lisaa_ooppera(yhteys,oopnimi,saveltaja):
 	avain = yhteys.query("select currval('oop_id')").getresult()[0][0]
 	return avain
 
+def lisaa_oopperaan_rooli(yhteys,ooppera_id,roolinimi,aaniala,onko_esiintyja):
+	lisays = "insert into rooli values (DEFAULT,'" + ooppera_id + "','" + roolinimi + "','" + aaniala + "','" + onko_esiintyja + "')"
+	yhteys.query(lisays)
+	avain = yhteys.query("select currval('rool_id')")
+	return avain
 
 # Alustava funktio kaiken mahdollisen tiedon lisaamiseen tietokantaan
 
@@ -26,9 +31,16 @@ def lisaa_kantaan():
 		print ooppera
 		saveltaja = request.GET.get('saveltaja','').strip()
 		paiva = request.GET.get('esityspaiva','').strip()
+		rooli1_nimi = request.GET.get('rooli1_nimi','').strip()
+		onko1_esiintyja = request.GET.get('onko1_esiintyja','').strip()
+		if onko1_esiintyja == 'on':
+			onko1_esiintyja = 'true'
+		else:
+			onko1_esiintyja = 'false'
+		rooli1_aaniala = request.GET.get('rooli1_aaniala','').strip()
         	yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
-		oop_avain = lisaa_ooppera(yhteys,ooppera,saveltaja)
-		print oop_avain
+		oop_avain = str(lisaa_ooppera(yhteys,ooppera,saveltaja))
+		rool_avain = str(lisaa_oopperaan_rooli(yhteys,oop_avain,rooli1_nimi,rooli1_aaniala,onko1_esiintyja))
 		yhteys.close()
 		return "<p>Onnistui! %s</p>" % (oop_avain)
 	else:
@@ -39,7 +51,7 @@ def lisaa_kantaan():
 @oop.route('/tulossivu')
 def tulossivu():
 	yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
-	tulos = yhteys.query("select ooppera_id,oopnimi,saveltaja from ooppera")
+	tulos = yhteys.query("select ooppera.ooppera_id,rooli.ooppera_id,oopnimi,saveltaja,roolinimi,aaniala,esiintyja from ooppera inner join rooli ON (ooppera.ooppera_id = rooli.ooppera_id)")
 	pal = tulos.getresult()
 	output = template('ooptaulukko',rivit=pal)
 	yhteys.close()
