@@ -13,5 +13,5 @@
 	<input type = "text" size = "50" maxlength = "40" name = "rooli3_nimi" value = "Roolin 3 nimi"/>
 	<input type = "checkbox" name = "onko3_esiintyja" checked = "checked"/>
 	<input type = "text" size = "50" maxlength = "40" name = "rooli3_aaniala" value = "Roolin 3 ääniala"/>	
-	<input type="submit" name = "save" value"save">
+	<input type="submit" name = "save" value = "save"/>
 </form>
