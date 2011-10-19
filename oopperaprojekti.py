@@ -22,37 +22,49 @@ def lisaa_oopperaan_rooli(yhteys,ooppera_id,roolinimi,aaniala,onko_esiintyja):
 	avain = yhteys.query("select currval('rool_id')")
 	return avain
 
-def haekaikesta(yhteys,hakukrit):
-	print hakukrit
-	tulokset = []
-	for sana in hakukrit:
-		tulos = yhteys.query("""
-		select oopnimi,saveltaja,roolinimi,aaniala,etunimi,sukunimi,tehtava,ryhmannimi,ryhmantehtava,paivamaara,ooptalonnimi,ooptalonsijainti
-			from ooppera inner join rooli ON (ooppera.ooppera_id = rooli.ooppera_id)
-				inner join rse_kombinaatio as rse ON (rooli.rooli_id = rse.rooli_id)
-				inner join henkilo ON (henkilo.henkilo_id = rse.henkilo_id)
-				inner join oopperaesitys as oes ON (oes.esitys_id = rse.esitys_id)
-				inner join ryhma_esitys_kombinaatio as rek ON (oes.esitys_id = rek.esitys_id)
-				inner join ryhma ON (ryhma.ryhma_id = rek.ryhma_id)
-				inner join oopperatalo ON (oopperatalo.talo_id = oes.talo_id)
-				where saveltaja LIKE '%%%s%%' OR
-					oopnimi LIKE '%%%s%%' OR
-					roolinimi LIKE '%%%s%%' OR
-					aaniala LIKE '%%%s%%' OR
-					etunimi LIKE '%%%s%%' OR
-					sukunimi LIKE '%%%s%%' OR
-					tehtava LIKE '%%%s%%' OR
-					ryhmannimi LIKE '%%%s%%' OR
-					ryhmantehtava LIKE '%%%s%%' OR
-					ooptalonnimi LIKE '%%%s%%' OR
-					ooptalonsijainti LIKE '%%%s%%'		
-		""" % (sana, sana,sana,sana,sana,sana,sana,sana,sana,sana,sana,)).getresult()
-		print tulos
-		tulokset.append(tulos)
-	if len(tulokset) > 0:
-		tulokset = tulokset[0] 
-	print tulokset
-	return tulokset
+class hakija:
+	def __init__(self,yhteys,hakukrit):
+		self.hakukrit = hakukrit
+		self.yhteys = yhteys
+		self.taulut = []
+		self.kentat = []
+		
+
+	def haekaikesta(self):
+		tulokset = []
+		for sana in self.hakukrit:
+			tulos = self.yhteys.query("""
+			select oopnimi,saveltaja,paivamaara,ryhmannimi,ooptalonnimi,roolinimi,aaniala,etunimi,sukunimi
+				from ooppera inner join rooli ON (ooppera.ooppera_id = rooli.ooppera_id)
+					inner join rse_kombinaatio as rse ON (rooli.rooli_id = rse.rooli_id)
+					inner join henkilo ON (henkilo.henkilo_id = rse.henkilo_id)
+					inner join oopperaesitys as oes ON (oes.esitys_id = rse.esitys_id)
+					inner join ryhma_esitys_kombinaatio as rek ON (oes.esitys_id = rek.esitys_id)
+					inner join ryhma ON (ryhma.ryhma_id = rek.ryhma_id)
+					inner join oopperatalo ON (oopperatalo.talo_id = oes.talo_id)
+					where saveltaja LIKE '%%%s%%' OR
+						oopnimi LIKE '%%%s%%' OR
+						roolinimi LIKE '%%%s%%' OR
+						aaniala LIKE '%%%s%%' OR
+						sukunimi LIKE '%%%s%%'
+			""" % (sana, sana,sana,sana,sana)).getresult()
+			print tulos
+			tulokset.append(tulos)
+		valitulos = []
+		if len(tulokset) > 0:
+			for tulos in tulokset:
+				for item in tulos:
+					valitulos.append(item)
+					
+		valitulos1 = []
+		for item in valitulos:
+			if item not in valitulos1:
+				valitulos1.append(item)
+		
+		lopputulos = valitulos1
+	
+		print lopputulos
+		return lopputulos
 		
 		
 
@@ -89,8 +101,8 @@ def hae_kannasta():
 		hakukrit = haetaan.split()
 		print hakukrit
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
-		pal = haekaikesta(yhteys,hakukrit)
-		output = template('ooptaulukko',rivit=pal)
+		pal = hakija(yhteys,hakukrit) 
+		output = template('ooptaulukko',rivit=(pal.haekaikesta()))
 		yhteys.close
 		return output
 	else:
