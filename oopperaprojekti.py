@@ -4,18 +4,11 @@ from bottle import Bottle, route, run, debug, template, request
 
 oop = Bottle()
 
-
 # Funktio yhdistaa tietokantaan
 def yhdista(tietokanta,isanta,kayttaja,salasana):
 	con1 = pg.connect(dbname=tietokanta,host=isanta,user=kayttaja,passwd=salasana)
-	dbcon = pg.DB(con1)
-	return [con1,dbcon]
+	return con1
     
-# Yhdistetään tietokantaan. Toistaiseksi näin. Lopulliseen versioon täytyy keksiä jotain hienoa.
-
-yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')[0]
-dbyht = yhdista('oopperatietokanta','localhost','verneri','kissa')[1]
-
 # Funktio lisaa dataa ooppera-tauluun
 def lisaa_ooppera(yhteys,oopnimi,saveltaja):
 	lisays = "insert into ooppera values (DEFAULT,'" + oopnimi + "','" + saveltaja + "')"
@@ -30,36 +23,12 @@ def lisaa_oopperaan_rooli(yhteys,ooppera_id,roolinimi,aaniala,onko_esiintyja):
 	return avain
 
 class hakija:
-	# Kaikille yhteiset arvot
-	## Tulosrivit
-	otsikkokentat = ['paivamaara','oopnimi','saveltaja','ooptalonnimi','ryhmannimi','ryhmantehtava','festivaali']
-	tuloslista = []
-
-	def __init__(self,yhteys,hakukrit,kentat):
+	def __init__(self,yhteys,hakukrit):
 		self.hakukrit = hakukrit
 		self.yhteys = yhteys
-		# Oletus
-		self.kentat = kentat
-		self.taulut = {}
+		self.taulut = []
+		self.kentat = []
 		
-	# Metodilla muokataan hakutulos hae-funktiolle sopivaan muotoon.
-	def muokkaa_lopputulos(self,tulokset):
-		if len(tulokset) > 0:
-			valitulos= []
-			# Käsitellään jokainen 'dictionary' listasta
-			for tulos in tulokset:
-				# Käsitellään jokainen elementti 'dictionarysta'.
-				for k,v in tulos.iteritems():
-					if k not  
-
-					
-		valitulos1 = []
-		for item in valitulos:
-			if item not in valitulos1:
-				valitulos1.append(item)
-		
-
-		return valitulos1	
 
 	def haekaikesta(self):
 		tulokset = []
@@ -78,15 +47,25 @@ class hakija:
 						roolinimi LIKE '%%%s%%' OR
 						aaniala LIKE '%%%s%%' OR
 						sukunimi LIKE '%%%s%%'
-					order by paivamaara
-			""" % (sana, sana,sana,sana,sana)).dictresult()
+			""" % (sana, sana,sana,sana,sana)).getresult()
 			print tulos
 			tulokset.append(tulos)
-
-		lopputulos = self.muokkaa_lopputulos(tulokset)
+		valitulos = []
+		if len(tulokset) > 0:
+			for tulos in tulokset:
+				for item in tulos:
+					valitulos.append(item)
+					
+		valitulos1 = []
+		for item in valitulos:
+			if item not in valitulos1:
+				valitulos1.append(item)
+		
+		lopputulos = valitulos1
 	
 		print lopputulos
 		return lopputulos
+		
 		
 
 # Alustava funktio kaiken mahdollisen tiedon lisaamiseen tietokantaan
@@ -105,10 +84,10 @@ def lisaa_kantaan():
 		else:
 			onko1_esiintyja = 'false'
 		rooli1_aaniala = request.GET.get('rooli1_aaniala','').strip()
-        	#yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')[0]
+        	yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		oop_avain = str(lisaa_ooppera(yhteys,ooppera,saveltaja))
 		rool_avain = str(lisaa_oopperaan_rooli(yhteys,oop_avain,rooli1_nimi,rooli1_aaniala,onko1_esiintyja))
-		#yhteys.close()
+		yhteys.close()
 		return "<p>Onnistui! %s</p>" % (oop_avain)
 	else:
 		return template('lisaa.tpl')
@@ -121,11 +100,10 @@ def hae_kannasta():
 		haetaan = request.GET.get('haku','').strip()
 		hakukrit = haetaan.split()
 		print hakukrit
-		# yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')[0]
-		kentat = ['oopnimi','saveltaja','paivamaara','ryhmannimi','ooptalonnimi','roolinimi','aaniala','etunimi','sukunimi']
-		pal = hakija(yhteys,hakukrit,kentat) 
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		pal = hakija(yhteys,hakukrit) 
 		output = template('ooptaulukko',rivit=(pal.haekaikesta()))
-		#yhteys.close
+		yhteys.close
 		return output
 	else:
 		return template('hae.tpl')
@@ -135,11 +113,11 @@ def hae_kannasta():
 
 @oop.route('/tulossivu')
 def tulossivu():
-	#yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')[0]
+	yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 	tulos = yhteys.query("select ooppera.ooppera_id,rooli.ooppera_id,oopnimi,saveltaja,roolinimi,aaniala,esiintyja from ooppera inner join rooli ON (ooppera.ooppera_id = rooli.ooppera_id)")
 	pal = tulos.getresult()
 	output = template('ooptaulukko',rivit=pal)
-	#yhteys.close()
+	yhteys.close()
 	return output
 
 
