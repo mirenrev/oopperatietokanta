@@ -44,6 +44,10 @@ class hakija:
 
 	def muotoile_tulos(self,hakutulos):
 		
+		lopputulokseen = []
+		ots = []
+		run = []
+		ryh = []
 		for tulos in hakutulos:
 			# Muotoillaan näytettäville tulostaulukoille otsikko-osat tpl-tiedostolle sopivaan muotoon.
 			# Otsikko-osaan sisällytetään elementit, joiden arvo on useilla riveillä sama.
