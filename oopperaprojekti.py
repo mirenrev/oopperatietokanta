@@ -6,8 +6,13 @@ oop = Bottle()
 
 # Funktio yhdistaa tietokantaan
 def yhdista(tietokanta,isanta,kayttaja,salasana):
-	con1 = pg.connect(dbname=tietokanta,host=isanta,user=kayttaja,passwd=salasana)
-	return con1
+	con = pg.connect(dbname=tietokanta,host=isanta,user=kayttaja,passwd=salasana)
+	return con
+
+# Tämän avulla saadaan db-luokan funktiot käyttöön
+def db_yhteys(tietokanta,isanta,kayttaja,salasana):
+	con = pg.DB(dbname=tietokanta,host=isanta,user=kayttaja,passwd=salasana)
+	return con
     
 # Funktio lisaa dataa ooppera-tauluun
 def lisaa_ooppera(yhteys,oopnimi,saveltaja):
@@ -23,15 +28,52 @@ def lisaa_oopperaan_rooli(yhteys,ooppera_id,roolinimi,aaniala,onko_esiintyja):
 	return avain
 
 class hakija:
+	## Nettisivulla toistettavan taulukon eri osiin kirjattavat tietokannan sarakkeet
+	ots_sar = ['paivamaara','saveltaja','oopnimi','ooptalonnimi','festivaali','ooptalonsijainti']
+	ryhma_sar = ['ryhmannimi','ryhmantehtavak']
+	runko_sar = ['roolinimi','aaniala','etunimi','sukunimi','tehtava']
+
 	def __init__(self,yhteys,hakukrit):
 		self.hakukrit = hakukrit
 		self.yhteys = yhteys
-		self.taulut = []
+		self.ots_sarakkeet = []
+		self.ryhma_sarakkeet = []
+		self.runko_sarakkeet = []
 		self.kentat = []
+		self.lopputulos = []
+
+	def muotoile_tulos(self,hakutulos):
 		
+		for tulos in hakutulos:
+			# Muotoillaan näytettäville tulostaulukoille otsikko-osat tpl-tiedostolle sopivaan muotoon.
+			# Otsikko-osaan sisällytetään elementit, joiden arvo on useilla riveillä sama.
+			otsikko = []
+			ryhma = []
+			runko = []
+			for sarake in self.ots_sar + self.ryhma_sar + self.runko_sar:
+				if sarake in self.ots_sar:
+					otsikko.append(tulos.get(sarake))
+				elif sarake in self.ryhma_sar:
+					ryhma.append(tulos.get(sarake))
+				else:
+					runko.append(tulos.get(sarake))
+
+			if otsikko not in self.ots_sarakkeet:
+				self.ots_sarakkeet.append(otsikko)
+			if ryhma not in self.ryhma_sarakkeet:
+				self.ryhma_sarakkeet.append(ryhma)
+			if runko not in self.runko_sarakkeet:
+				self.runko_sarakkeet.append(runko)
+			
+			#print self.ots_sarakkeet
+			#print self.ryhma_sarakkeet
+			#print self.runko_sarakkeet
+			
+
 
 	def haekaikesta(self):
 		tulokset = []
+		#db = db_yhteys('oopperatietokanta','localhost','verneri','kissa')
 		for sana in self.hakukrit:
 			tulos = self.yhteys.query("""
 			select oopnimi,saveltaja,paivamaara,ryhmannimi,ooptalonnimi,roolinimi,aaniala,etunimi,sukunimi
@@ -47,21 +89,27 @@ class hakija:
 						roolinimi LIKE '%%%s%%' OR
 						aaniala LIKE '%%%s%%' OR
 						sukunimi LIKE '%%%s%%'
-			""" % (sana, sana,sana,sana,sana)).getresult()
-			print tulos
+			""" % (sana, sana,sana,sana,sana)).dictresult()
+			#print tulos
 			tulokset.append(tulos)
+
+		tulokset = tulokset.pop()
+		#print tulokset
+		self.muotoile_tulos(tulokset)
 		valitulos = []
 		if len(tulokset) > 0:
 			for tulos in tulokset:
 				for item in tulos:
 					valitulos.append(item)
-					
+		
 		valitulos1 = []
 		for item in valitulos:
 			if item not in valitulos1:
 				valitulos1.append(item)
 		
-		lopputulos = valitulos1
+		lopputulos = []
+		for item in self.ots_sarakkeet,self.runko_sarakkeet,self.ryhma_sarakkeet:
+			 lopputulos.append(item)
 	
 		print lopputulos
 		return lopputulos
@@ -99,7 +147,7 @@ def hae_kannasta():
 	if request.GET.get('save','').strip():
 		haetaan = request.GET.get('haku','').strip()
 		hakukrit = haetaan.split()
-		print hakukrit
+		#print hakukrit
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		pal = hakija(yhteys,hakukrit) 
 		output = template('ooptaulukko',rivit=(pal.haekaikesta()))
