@@ -49,6 +49,9 @@ class hakija:
 		ots = []
 		runko = []
 		ryhma = []
+		self.lopputulos.append(ots)
+		self.lopputulos.append(runko)
+		self.lopputulos.append(ryhma)
 
 		for tulos in hakutulos:
 			# Muotoillaan näytettäville tulostaulukoille otsikko-osat tpl-tiedostolle sopivaan muotoon.
@@ -66,7 +69,7 @@ class hakija:
 
 		for i in range(len(ots)):
 			for tulos in hakutulos:
-				print tulos
+				#print tulos
 				onkosopiva = False
 				for o in ots[i]:
 					if o in tulos.values():
@@ -78,7 +81,6 @@ class hakija:
 					tama_ryhma = []
 					for sarake in self.ryhma_sar:
 						if sarake in tulos.keys():
-							print tulos.keys()
 							tama_ryhma.append(tulos.get(sarake))
 					if tama_ryhma not in ryhma[i]:
 						ryhma[i].append(tama_ryhma)
@@ -89,17 +91,8 @@ class hakija:
 							tama_runko.append(tulos.get(sarake))
 					if tama_runko not in runko[i]:
 						runko[i].append(tama_runko)
-
-		print ots
-		print
-		print runko
-		print
-		print ryhma
-
-		#for tulos in hakutulos:
-			
-			
-
+		print self.lopputulos		
+		
 
 	def haekaikesta(self):
 		tulokset = []
@@ -178,8 +171,9 @@ def hae_kannasta():
 		#print hakukrit
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		pal = hakija(yhteys,hakukrit) 
-		output = template('tulostaulukko',rivit=(pal.haekaikesta()))
-		yhteys.close
+		pal.haekaikesta()
+		output = template('tulostaulukko',rivit=pal.lopputulos)
+		yhteys.close()
 		return output
 	else:
 		return template('hae.tpl')
