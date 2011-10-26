@@ -30,48 +30,74 @@ def lisaa_oopperaan_rooli(yhteys,ooppera_id,roolinimi,aaniala,onko_esiintyja):
 class hakija:
 	## Nettisivulla toistettavan taulukon eri osiin kirjattavat tietokannan sarakkeet
 	ots_sar = ['paivamaara','saveltaja','oopnimi','ooptalonnimi','festivaali','ooptalonsijainti']
-	ryhma_sar = ['ryhmannimi','ryhmantehtavak']
+	ryhma_sar = ['ryhmannimi','ryhmantehtava']
 	runko_sar = ['roolinimi','aaniala','etunimi','sukunimi','tehtava']
 
 	def __init__(self,yhteys,hakukrit):
 		self.hakukrit = hakukrit
 		self.yhteys = yhteys
-		self.ots_sarakkeet = []
-		self.ryhma_sarakkeet = []
-		self.runko_sarakkeet = []
+		self.tulos_ots_sarakkeet = []
+		self.tulos_ryhma_sarakkeet = []
+		self.tulos_runko_sarakkeet = []
 		self.kentat = []
 		self.lopputulos = []
 
-	def muotoile_tulos(self,hakutulos):
+	def muotoile_tulos(self,tuloslista):
 		
-		lopputulokseen = []
+		#Litistetään listan alilistat yhteen listaan.
+		hakutulos = [s for sanatulos in tuloslista for s in sanatulos]
 		ots = []
-		run = []
-		ryh = []
+		runko = []
+		ryhma = []
+
 		for tulos in hakutulos:
 			# Muotoillaan näytettäville tulostaulukoille otsikko-osat tpl-tiedostolle sopivaan muotoon.
 			# Otsikko-osaan sisällytetään elementit, joiden arvo on useilla riveillä sama.
 			otsikko = []
-			ryhma = []
-			runko = []
-			for sarake in self.ots_sar + self.ryhma_sar + self.runko_sar:
-				if sarake in self.ots_sar:
+			for sarake in self.ots_sar :
+				if sarake in tulos.keys():
 					otsikko.append(tulos.get(sarake))
-				elif sarake in self.ryhma_sar:
-					ryhma.append(tulos.get(sarake))
-				else:
-					runko.append(tulos.get(sarake))
+		
+			if otsikko not in ots:
+				ots.append(otsikko)
+		for x in range(len(ots)):
+			runko.append([])
+			ryhma.append([])
 
-			if otsikko not in self.ots_sarakkeet:
-				self.ots_sarakkeet.append(otsikko)
-			if ryhma not in self.ryhma_sarakkeet:
-				self.ryhma_sarakkeet.append(ryhma)
-			if runko not in self.runko_sarakkeet:
-				self.runko_sarakkeet.append(runko)
+		for i in range(len(ots)):
+			for tulos in hakutulos:
+				print tulos
+				onkosopiva = False
+				for o in ots[i]:
+					if o in tulos.values():
+						onkosopiva = True
+					else:
+						onkosopiva = False
+						break
+				if onkosopiva:
+					tama_ryhma = []
+					for sarake in self.ryhma_sar:
+						if sarake in tulos.keys():
+							print tulos.keys()
+							tama_ryhma.append(tulos.get(sarake))
+					if tama_ryhma not in ryhma[i]:
+						ryhma[i].append(tama_ryhma)
+
+					tama_runko = []
+					for sarake in self.runko_sar:
+						if sarake in tulos.keys():
+							tama_runko.append(tulos.get(sarake))
+					if tama_runko not in runko[i]:
+						runko[i].append(tama_runko)
+
+		print ots
+		print
+		print runko
+		print
+		print ryhma
+
+		#for tulos in hakutulos:
 			
-			#print self.ots_sarakkeet
-			#print self.ryhma_sarakkeet
-			#print self.runko_sarakkeet
 			
 
 
@@ -97,8 +123,6 @@ class hakija:
 			#print tulos
 			tulokset.append(tulos)
 
-		tulokset = tulokset.pop()
-		#print tulokset
 		self.muotoile_tulos(tulokset)
 		valitulos = []
 		if len(tulokset) > 0:
@@ -112,10 +136,10 @@ class hakija:
 				valitulos1.append(item)
 		
 		lopputulos = []
-		for item in self.ots_sarakkeet,self.runko_sarakkeet,self.ryhma_sarakkeet:
+		for item in self.tulos_ots_sarakkeet,self.tulos_runko_sarakkeet,self.tulos_ryhma_sarakkeet:
 			 lopputulos.append(item)
 	
-		print lopputulos
+		#print lopputulos
 		return lopputulos
 		
 		
@@ -154,7 +178,7 @@ def hae_kannasta():
 		#print hakukrit
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		pal = hakija(yhteys,hakukrit) 
-		output = template('ooptaulukko',rivit=(pal.haekaikesta()))
+		output = template('tulostaulukko',rivit=(pal.haekaikesta()))
 		yhteys.close
 		return output
 	else:
@@ -168,6 +192,7 @@ def tulossivu():
 	yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 	tulos = yhteys.query("select ooppera.ooppera_id,rooli.ooppera_id,oopnimi,saveltaja,roolinimi,aaniala,esiintyja from ooppera inner join rooli ON (ooppera.ooppera_id = rooli.ooppera_id)")
 	pal = tulos.getresult()
+	print pal
 	output = template('ooptaulukko',rivit=pal)
 	yhteys.close()
 	return output
