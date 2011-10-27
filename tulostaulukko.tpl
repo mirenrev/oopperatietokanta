@@ -1,32 +1,43 @@
+<html>
+<head>
+	<title>Tulossivu</title>
+</head>
+
+
+
+
+<body>
 %# Malli tulostaulukon luontiin
 <p>Hakutulokset</p>
 
+
 %for i in range(len(rivit[0])):
-	%for item in rivit[0],rivit[1],rivit[2]:
-		<table border="1">
+<table border="10" width = "400">
+	<th>Ooppera</th>
+	%for item in rivit[0][i]:
 		<tr>
-			<td>	{{item[i]}} </td>
+			<td align ="center">{{item}} </td>
 		</tr>
-		<table>
 	%end	 
-%end
 
-
-
-
-
-<table> 
-%for rivi in rivit:
-	<table border = "1">
-		%for osuma in rivi:
-			<tr>
-				%for tulos in osuma:
-					<td>{{tulos}}</td>
-					<br/>
-				%end
-			</tr>
+	<th>Toteuttajat</th>
+	%for jtem in rivit[1][i]:
+		<tr>
+		%for x in jtem:
+				<td align="center">{{x}}</td>
 		%end
-	</table>
-%end
+		</tr>
+	%end
+	<th>Ryhmät</th>
+	%for ktem in rivit[2][i]:
+		<tr>
+		%for y in ktem:
+			<td align="center">{{y}}</td>
+		%end
+		</tr>
+	%end
 </table>
+%end
 
+</body>
+</html>

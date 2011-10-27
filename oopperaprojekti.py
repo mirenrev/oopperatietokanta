@@ -107,7 +107,7 @@ class hakija:
 					inner join ryhma_esitys_kombinaatio as rek ON (oes.esitys_id = rek.esitys_id)
 					inner join ryhma ON (ryhma.ryhma_id = rek.ryhma_id)
 					inner join oopperatalo ON (oopperatalo.talo_id = oes.talo_id)
-					where saveltaja LIKE '%%%s%%' OR
+					where saveltaja LIKE '%%%s%%' OR 
 						oopnimi LIKE '%%%s%%' OR
 						roolinimi LIKE '%%%s%%' OR
 						aaniala LIKE '%%%s%%' OR
