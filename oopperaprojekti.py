@@ -13,21 +13,21 @@ def yhdista(tietokanta,isanta,kayttaja,salasana):
 def db_yhteys(tietokanta,isanta,kayttaja,salasana):
 	con = pg.DB(dbname=tietokanta,host=isanta,user=kayttaja,passwd=salasana)
 	return con
-    
-# Funktio lisaa dataa ooppera-tauluun
-def lisaa_ooppera(yhteys,oopnimi,saveltaja):
-	lisays = "insert into ooppera values (DEFAULT,'" + oopnimi + "','" + saveltaja + "')"
-	yhteys.query(lisays)
-	avain = yhteys.query("select currval('oop_id')").getresult()[0][0]
-	return avain
+class Lisaaja:   
+	# Funktio lisaa dataa ooppera-tauluun
+	def lisaa_ooppera(self,yhteys,oopnimi,saveltaja):
+		lisays = "insert into ooppera values (DEFAULT,'" + oopnimi + "','" + saveltaja + "')"
+		yhteys.query(lisays)
+		avain = yhteys.query("select currval('oop_id')").getresult()[0][0]
+		return avain
 
-def lisaa_oopperaan_rooli(yhteys,ooppera_id,roolinimi,aaniala,onko_esiintyja):
-	lisays = "insert into rooli values (DEFAULT,'" + ooppera_id + "','" + roolinimi + "','" + aaniala + "','" + onko_esiintyja + "')"
-	yhteys.query(lisays)
-	avain = yhteys.query("select currval('rool_id')")
-	return avain
+	def lisaa_oopperaan_rooli(self,yhteys,ooppera_id,roolinimi,aaniala,onko_esiintyja):
+		lisays = "insert into rooli values (DEFAULT,'" + ooppera_id + "','" + roolinimi + "','" + aaniala + "','" + onko_esiintyja + "')"
+		yhteys.query(lisays)
+		avain = yhteys.query("select currval('rool_id')")
+		return avain
 
-class hakija:
+class Hakija:
 	## Nettisivulla toistettavan taulukon eri osiin kirjattavat tietokannan sarakkeet
 	ots_sar = ['paivamaara','saveltaja','oopnimi','ooptalonnimi','festivaali','ooptalonsijainti']
 	ryhma_sar = ['ryhmannimi','ryhmantehtava']
@@ -36,22 +36,16 @@ class hakija:
 	def __init__(self,yhteys,hakukrit):
 		self.hakukrit = hakukrit
 		self.yhteys = yhteys
-		self.tulos_ots_sarakkeet = []
-		self.tulos_ryhma_sarakkeet = []
-		self.tulos_runko_sarakkeet = []
+		self.ots = []
+		self.runko = []
+		self.ryhma = []
 		self.kentat = []
-		self.lopputulos = []
-
+		self.lopputulos = [self.ots, self.runko, self.ryhma]
+				
 	def muotoile_tulos(self,tuloslista):
 		
 		#Litistetään listan alilistat yhteen listaan.
 		hakutulos = [s for sanatulos in tuloslista for s in sanatulos]
-		ots = []
-		runko = []
-		ryhma = []
-		self.lopputulos.append(ots)
-		self.lopputulos.append(runko)
-		self.lopputulos.append(ryhma)
 
 		for tulos in hakutulos:
 			# Muotoillaan näytettäville tulostaulukoille otsikko-osat tpl-tiedostolle sopivaan muotoon.
@@ -61,17 +55,17 @@ class hakija:
 				if sarake in tulos.keys():
 					otsikko.append(tulos.get(sarake))
 		
-			if otsikko not in ots:
-				ots.append(otsikko)
-		for x in range(len(ots)):
-			runko.append([])
-			ryhma.append([])
+			if otsikko not in self.ots:
+				self.ots.append(otsikko)
+		for x in range(len(self.ots)):
+			self.runko.append([])
+			self.ryhma.append([])
 
-		for i in range(len(ots)):
+		for i in range(len(self.ots)):
 			for tulos in hakutulos:
 				#print tulos
 				onkosopiva = False
-				for o in ots[i]:
+				for o in self.ots[i]:
 					if o in tulos.values():
 						onkosopiva = True
 					else:
@@ -82,24 +76,23 @@ class hakija:
 					for sarake in self.ryhma_sar:
 						if sarake in tulos.keys():
 							tama_ryhma.append(tulos.get(sarake))
-					if tama_ryhma not in ryhma[i]:
-						ryhma[i].append(tama_ryhma)
+					if tama_ryhma not in self.ryhma[i]:
+						self.ryhma[i].append(tama_ryhma)
 
 					tama_runko = []
 					for sarake in self.runko_sar:
 						if sarake in tulos.keys():
 							tama_runko.append(tulos.get(sarake))
-					if tama_runko not in runko[i]:
-						runko[i].append(tama_runko)
+					if tama_runko not in self.runko[i]:
+						self.runko[i].append(tama_runko)
 		print self.lopputulos		
 		
 
 	def haekaikesta(self):
 		tulokset = []
 		#db = db_yhteys('oopperatietokanta','localhost','verneri','kissa')
-		for sana in self.hakukrit:
-			tulos = self.yhteys.query("""
-			select oopnimi,saveltaja,paivamaara,ryhmannimi,ooptalonnimi,roolinimi,aaniala,etunimi,sukunimi
+		kysely = """
+			select oopnimi,saveltaja,paivamaara,ryhmannimi,ryhmantehtava,ooptalonnimi,ooptalonsijainti,roolinimi,aaniala,etunimi,sukunimi,tehtava
 				from ooppera inner join rooli ON (ooppera.ooppera_id = rooli.ooppera_id)
 					inner join rse_kombinaatio as rse ON (rooli.rooli_id = rse.rooli_id)
 					inner join henkilo ON (henkilo.henkilo_id = rse.henkilo_id)
@@ -107,33 +100,41 @@ class hakija:
 					inner join ryhma_esitys_kombinaatio as rek ON (oes.esitys_id = rek.esitys_id)
 					inner join ryhma ON (ryhma.ryhma_id = rek.ryhma_id)
 					inner join oopperatalo ON (oopperatalo.talo_id = oes.talo_id)
-					where saveltaja LIKE '%%%s%%' OR 
+					where saveltaja LIKE '%%%s%%' OR
 						oopnimi LIKE '%%%s%%' OR
 						roolinimi LIKE '%%%s%%' OR
 						aaniala LIKE '%%%s%%' OR
 						sukunimi LIKE '%%%s%%'
-			""" % (sana, sana,sana,sana,sana)).dictresult()
-			#print tulos
-			tulokset.append(tulos)
+			"""
+		leikkaus = " INTERSECT " 
 
+		kys = []
+
+		for i in range(len(self.hakukrit)):
+			if i < len(self.hakukrit) - 1:
+				kys.append(kysely)
+				kys.append(leikkaus)
+			else:
+				kys.append(kysely)
+
+		loppu = ['(']
+		for j in range(len(self.hakukrit)):
+			if j < len(self.hakukrit) - 1:
+				for z in range(5):
+					loppu.append('"' + self.hakukrit[j] + '",')
+			else:
+				for zx in range(4):
+					loppu.append('"' + self.hakukrit[j] + '",')
+				loppu.append('"' + self.hakukrit[j]+ '"' + ")")
+
+		lop = ' '.join(loppu)
+
+		valmis = " ".join(kys)
+
+		for sana in self.hakukrit:
+			tulos = self.yhteys.query(valmis % eval(lop)).dictresult()
+			tulokset.append(tulos)
 		self.muotoile_tulos(tulokset)
-		valitulos = []
-		if len(tulokset) > 0:
-			for tulos in tulokset:
-				for item in tulos:
-					valitulos.append(item)
-		
-		valitulos1 = []
-		for item in valitulos:
-			if item not in valitulos1:
-				valitulos1.append(item)
-		
-		lopputulos = []
-		for item in self.tulos_ots_sarakkeet,self.tulos_runko_sarakkeet,self.tulos_ryhma_sarakkeet:
-			 lopputulos.append(item)
-	
-		#print lopputulos
-		return lopputulos
 		
 		
 
@@ -154,8 +155,9 @@ def lisaa_kantaan():
 			onko1_esiintyja = 'false'
 		rooli1_aaniala = request.GET.get('rooli1_aaniala','').strip()
         	yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
-		oop_avain = str(lisaa_ooppera(yhteys,ooppera,saveltaja))
-		rool_avain = str(lisaa_oopperaan_rooli(yhteys,oop_avain,rooli1_nimi,rooli1_aaniala,onko1_esiintyja))
+		lis = Lisaaja()
+		oop_avain = str(lis.lisaa_ooppera(yhteys,ooppera,saveltaja))
+		rool_avain = str(lis.lisaa_oopperaan_rooli(yhteys,oop_avain,rooli1_nimi,rooli1_aaniala,onko1_esiintyja))
 		yhteys.close()
 		return "<p>Onnistui! %s</p>" % (oop_avain)
 	else:
@@ -170,7 +172,7 @@ def hae_kannasta():
 		hakukrit = haetaan.split()
 		#print hakukrit
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
-		pal = hakija(yhteys,hakukrit) 
+		pal = Hakija(yhteys,hakukrit) 
 		pal.haekaikesta()
 		output = template('tulostaulukko',rivit=pal.lopputulos)
 		yhteys.close()
