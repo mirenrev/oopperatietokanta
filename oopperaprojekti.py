@@ -31,7 +31,7 @@ class Hakija:
 	## Nettisivulla toistettavan taulukon eri osiin kirjattavat tietokannan sarakkeet
 	ots_sar = ['paivamaara','saveltaja','oopnimi','ooptalonnimi','festivaali','ooptalonsijainti']
 	ryhma_sar = ['ryhmannimi','ryhmantehtava']
-	runko_sar = ['roolinimi','aaniala','etunimi','sukunimi','tehtava']
+	runko_sar = ['roolinimi','aaniala','etunimi','sukunimi','ammatti']
 
 	def __init__(self,yhteys,hakukrit):
 		self.hakukrit = hakukrit
@@ -41,7 +41,10 @@ class Hakija:
 		self.ryhma = []
 		self.kentat = []
 		self.lopputulos = [self.ots, self.runko, self.ryhma]
-				
+
+	def haelopputulos(self):
+		return self.lopputulos
+
 	def muotoile_tulos(self,tuloslista):
 		
 		#Litistetään listan alilistat yhteen listaan.
@@ -85,14 +88,13 @@ class Hakija:
 							tama_runko.append(tulos.get(sarake))
 					if tama_runko not in self.runko[i]:
 						self.runko[i].append(tama_runko)
-		print self.lopputulos		
 		
 
 	def haekaikesta(self):
 		tulokset = []
 		#db = db_yhteys('oopperatietokanta','localhost','verneri','kissa')
 		kysely = """
-			select oopnimi,saveltaja,paivamaara,ryhmannimi,ryhmantehtava,ooptalonnimi,ooptalonsijainti,roolinimi,aaniala,etunimi,sukunimi,tehtava
+			select oopnimi,saveltaja,paivamaara,ryhmannimi,ryhmantehtava,ooptalonnimi,ooptalonsijainti,roolinimi,aaniala,etunimi,sukunimi,ammatti
 				from ooppera inner join rooli ON (ooppera.ooppera_id = rooli.ooppera_id)
 					inner join rse_kombinaatio as rse ON (rooli.rooli_id = rse.rooli_id)
 					inner join henkilo ON (henkilo.henkilo_id = rse.henkilo_id)
@@ -104,7 +106,13 @@ class Hakija:
 						oopnimi LIKE '%%%s%%' OR
 						roolinimi LIKE '%%%s%%' OR
 						aaniala LIKE '%%%s%%' OR
-						sukunimi LIKE '%%%s%%'
+						sukunimi LIKE '%%%s%%' OR
+						etunimi LIKE '%%%s%%' OR
+						ammatti LIKE '%%%s%%' OR 
+						ryhmannimi LIKE '%%%s%%' OR 
+						ryhmantehtava LIKE '%%%s%%' OR 
+						ooptalonnimi LIKE '%%%s%%' OR 
+						ooptalonsijainti LIKE '%%%s%%' 
 			"""
 		leikkaus = " INTERSECT " 
 
@@ -120,22 +128,34 @@ class Hakija:
 		loppu = ['(']
 		for j in range(len(self.hakukrit)):
 			if j < len(self.hakukrit) - 1:
-				for z in range(5):
+				for z in range(11):
 					loppu.append('"' + self.hakukrit[j] + '",')
 			else:
-				for zx in range(4):
+				for zx in range(10):
 					loppu.append('"' + self.hakukrit[j] + '",')
 				loppu.append('"' + self.hakukrit[j]+ '"' + ")")
 
 		lop = ' '.join(loppu)
 
 		valmis = " ".join(kys)
-
+		print valmis
+		print lop
 		for sana in self.hakukrit:
 			tulos = self.yhteys.query(valmis % eval(lop)).dictresult()
 			tulokset.append(tulos)
 		self.muotoile_tulos(tulokset)
-		
+	
+	def tarkhaku(self):
+		tulokset = []
+		tarv_taulut = []
+		tarv_kentat = []
+		for item in hakukrit.keys():
+			if item == 'etunimisukunimi':
+				tarv_kentat.append('etunimi')
+				tarv_kentat.append('sukunimi')
+			else:
+				tarv_kentat.append(item)
+
 		
 
 # Alustava funktio kaiken mahdollisen tiedon lisaamiseen tietokantaan
@@ -165,20 +185,55 @@ def lisaa_kantaan():
 
 # Liitetaan oop-sovellukseen hakusivu.
 
-@oop.route('/hae',method = 'GET')
+@oop.route('/pikahaku',method = 'GET')
 def hae_kannasta():
 	if request.GET.get('save','').strip():
-		haetaan = request.GET.get('haku','').strip()
-		hakukrit = haetaan.split()
-		#print hakukrit
+		hakukrit = request.GET.get('haku','').strip().split()
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		pal = Hakija(yhteys,hakukrit) 
 		pal.haekaikesta()
-		output = template('tulostaulukko',rivit=pal.lopputulos)
+		output = template('tulostaulukko',rivit=pal.haelopputulos())
 		yhteys.close()
 		return output
 	else:
-		return template('hae.tpl')
+		return template('pikahaku.tpl')
+
+@oop.route('/tarkhaku', method = 'GET')
+def hae_tarkemmin():
+	if request.GET.get('save','').strip():
+		pelkat_es = request.GET.get('pelkat_esiintyjat','').strip()
+		if pelkat_es == 'on':
+			pelkat_es = 'true'
+		else:
+			pelkat_es = 'false'
+		oop  = {'oopnimi' : request.GET.get('oopnimi','').strip()}
+		sav  = {'saveltaja' : request.GET.get('saveltaja','').strip()}
+		roolinimi = {'roolinimi':request.GET.get('roolinimi','').strip()}
+		aaniala = {'aaniala' : request.GET.get('aaniala','').strip()}
+		paiva = {'paivamaara' : request.GET.get('paivamaara','').strip()}
+		fest= {'festivaali' : request.GET.get('festivaali','').strip()}
+		etusuk = {'etunimisukunimi' : request.GET.get('etunimisukunimi','').strip()}
+		ammatti = {'ammatti' : request.GET.get('ammatti','').strip()}
+		ryhn = {'ryhmannimi' : request.GET.get('ryhmannimi','').strip()}
+		ryht = {'ryhmantehtava' : request.GET.get('ryhmantehtava','').strip()}
+		ooptalo = {'ooptalonnimi' : request.GET.get('ooptalonnimi','').strip()}
+		ooptsij = {'ooptalonsijainti' : request.GET.get('ooptalonsijainti','').strip()}
+		hakukrit = []
+		for kentta in (oop,sav,roolinimi,aaniala,paiva,fest,etusuk,ammatti,ryhn,ryht,ooptalo,ooptsij):
+			print kentta
+			if (''.join(kentta.values())) != "--" and (''.join(kentta.values())) != "":
+				hakukrit.append(kentta)
+		hakukrit.append({'onkoesiintyja' : pelkat_es})
+		
+		print hakukrit	
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		tark = Hakija(yhteys,hakukrit)
+		tark.tarkhaku()
+		output = template('tulostaulukko', rivit = tark.haelopputulos())
+		yhteys.close()
+		return output
+	else:
+		return template('tarkhaku.tpl')
 
 
 # Liitetaan oop-sovellukseen tulossivu
