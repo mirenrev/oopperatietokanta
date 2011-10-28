@@ -88,7 +88,10 @@ class Hakija:
 							tama_runko.append(tulos.get(sarake))
 					if tama_runko not in self.runko[i]:
 						self.runko[i].append(tama_runko)
-		
+	
+	def jasenna_paivays(self,paivamaara):
+		return 1
+
 
 	def haekaikesta(self):
 		tulokset = []
@@ -147,16 +150,22 @@ class Hakija:
 	
 	def tarkhaku(self):
 		tulokset = []
+		kysytyt_taulut = []
 		tarv_taulut = []
-		tarv_kentat = []
-		for item in hakukrit.keys():
-			if item == 'etunimisukunimi':
-				tarv_kentat.append('etunimi')
-				tarv_kentat.append('sukunimi')
-			else:
-				tarv_kentat.append(item)
-
+		rajaus_kentat = []
+		for item in self.hakukrit:
+			for sana in item.keys():
+				if sana == 'etunimisukunimi':
+					rajaus_kentat.append({'etunimi' : item.get(sana).split()})
+					rajaus_kentat.append({'sukunimi' : item.get(sana).split()})
+				else:
+					rajaus_kentat.append({sana : item.get(sana).split()})
+				
+		print tarv_kentat	
+		print rajaus_kentat
 		
+		if 'oopnimi' in tarv_kentat or 'saveltaja' in tarv_kentat:
+			print
 
 # Alustava funktio kaiken mahdollisen tiedon lisaamiseen tietokantaan
 
@@ -220,18 +229,19 @@ def hae_tarkemmin():
 		ooptsij = {'ooptalonsijainti' : request.GET.get('ooptalonsijainti','').strip()}
 		hakukrit = []
 		for kentta in (oop,sav,roolinimi,aaniala,paiva,fest,etusuk,ammatti,ryhn,ryht,ooptalo,ooptsij):
-			print kentta
-			if (''.join(kentta.values())) != "--" and (''.join(kentta.values())) != "":
+			if (''.join(kentta.values())) != "":
 				hakukrit.append(kentta)
-		hakukrit.append({'onkoesiintyja' : pelkat_es})
+		if pelkat_es == "true":
+			hakukrit.append({'onkoesiintyja' : pelkat_es})
 		
-		print hakukrit	
+		for kentta in hakukrit:
+			print kentta	
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		tark = Hakija(yhteys,hakukrit)
 		tark.tarkhaku()
-		output = template('tulostaulukko', rivit = tark.haelopputulos())
+		#output = template('tulostaulukko', rivit = tark.haelopputulos())
 		yhteys.close()
-		return output
+		#return output
 	else:
 		return template('tarkhaku.tpl')
 
