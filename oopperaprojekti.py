@@ -161,11 +161,25 @@ class Hakija:
 				else:
 					rajaus_kentat.append({sana : item.get(sana).split()})
 				
-		print tarv_kentat	
 		print rajaus_kentat
+
+		## Hakulauseen alku
+
+		haunalku = ['SELECT ']
+		for i in range(len(rajaus_kentat)):
+			if i < (len(rajaus_kentat) - 1):
+				haunalku.append(''.join(rajaus_kentat[i].keys()))
+				haunalku.append(',')
+			else:
+				haunalku.append(''.join(rajaus_kentat[i].keys()))
+
+
+
+
+		print ''.join(haunalku)
 		
-		if 'oopnimi' in tarv_kentat or 'saveltaja' in tarv_kentat:
-			print
+		#if 'oopnimi' in tarv_kentat or 'saveltaja' in tarv_kentat:
+		#	print
 
 # Alustava funktio kaiken mahdollisen tiedon lisaamiseen tietokantaan
 
