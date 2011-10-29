@@ -173,11 +173,130 @@ class Hakija:
 			else:
 				haunalku.append(''.join(rajaus_kentat[i].keys()))
 
-
-
-
 		print ''.join(haunalku)
 		
+		## Luodaan mahdolliset tauluyhdistelmät:
+
+		for y in rajaus_kentat:
+			for x in y.keys():
+				if x == 'oopnimi' or x == 'saveltaja':
+					if 'ooppera' not in tarv_taulut:
+						tarv_taulut.append('ooppera')
+				if x == 'roolinimi' or x == 'onkoesiintyja' or x == 'aaniala':
+					if 'rooli' not in tarv_taulut:
+						tarv_taulut.append('rooli')
+				if x == 'paivamaara' or x == 'festivaali':
+					if 'oopperaesitys' not in tarv_taulut:
+						tarv_taulut.append('oopperaesitys')
+				if x == 'ooptalonnimi' or x == 'ooptalonsijainti':
+					if 'oopperatalo' not in tarv_taulut:
+						tarv_taulut.append('oopperatalo')
+				if x == 'etunimi' or x == 'sukunimi' or x == 'ammatti':
+					if 'henkilo' not in tarv_taulut:
+						tarv_taulut.append('henkilo')
+				if x == 'ryhmannimi' or x == 'ryhmantehtava':
+					if 'ryhma' not in tarv_taulut:
+						tarv_taulut.append('ryhma')
+		if ('rooli' in tarv_taulut and 'oopperaesitys' in tarv_taulut):
+			if 'rse_kombinaatio' not in tarv_taulut:
+				tarv_taulut.append('rse_kombinaatio')
+
+		if 'ooppera' in tarv_taulut and 'oopperatalo' in tarv_taulut:
+			if 'ooppera_esitys' not in tarv_taulut:
+				tarv_taulut.append('ooppera_esitys')
+
+		if ('rooli' in tarv_taulut or 'oopperaesitys' in tarv_taulut) and 'henkilo' in tarv_taulut:
+			if 'rse_kombinaatio' not in tarv_taulut:
+				tarv_taulut.append('rse_kombinaatio')
+		elif ('ooppera' in tarv_taulut or 'oopperatalo' in tarv_taulut) and 'henkilo' in tarv_taulut:
+			if 'rse_kombinaatio' not in tarv_taulut:
+				tarv_taulut.append('rse_kombinaatio')
+			if 'oopperaesitys' not in tarv_taulut:
+				tarv_taulut.append('oopperaesitys')
+
+		if 'oopperaesitys' in tarv_taulut and 'ryhma' in tarv_taulut:
+			if 'ryhma_esitys_kombinaatio' not in tarv_taulut:
+				tarv_taulut.append('ryhma_esitys_kombinaatio')
+		elif ('ooppera' in tarv_taulut or 'oopperatalo' in tarv_taulut) and 'ryhma' in tarv_taulut:
+			if 'ryhma_esitys_kombinaatio' not in tarv_taulut:
+				tarv_taulut.append('ryhma_esitys_kombinaatio')
+			if 'oopperaesitys' not in tarv_taulut:
+				tarv_taulut.append('oopperaesitys')
+		elif ('rooli' in tarv_taulut or 'henkilo' in tarv_taulut) and 'ryhma' in tarv_taulut:
+			if 'ryhma_esitys_kombinaatio' not in tarv_taulut:
+				tarv_taulut.append('ryhma_esitys_kombinaatio')
+			if 'oopperaesitys' not in tarv_taulut:
+				tarv_taulut.append('oopperaesitys')
+			if 'rse_kombinaatio' not in tarv_taulut:
+				tarv_taulut.append('rse_kombinaatio')
+			
+				
+			
+		## Taulujen oikea järjestys kyselyjä varten:
+
+		jarjestys = ['ooppera','rooli','oopperaesitys','rse_kombinaatio','henkilo','oopperatalo','ryhma_esitys_kombinaatio','ryhma']
+		
+		# Järjestetään taulut
+
+		kyselytaulut = []
+
+		for taulu in jarjestys:
+			if taulu in tarv_taulut:
+				kyselytaulut.append(taulu)
+
+		print; print; print
+
+		print kyselytaulut
+
+		# Luodaan sql-kyselyn from-osa. Avuksi tarvitaan PyGreSql-lisäosan db-luokkaa.
+		con = db_yhteys('oopperatietokanta','localhost','verneri','kissa')
+		
+		taalta = []
+
+		for i in range(len(kyselytaulut)):
+			if i == 0:
+				if ((kyselytaulut[i] == 'rooli') and (kyselytaulut[i + 1] == 'oopperaesitys')):
+					taalta.append('from rooli inner join rse_kombinaatio ON (rooli.rooli_id = rse_kombinaatio-rooli_id)' )
+				else:
+					taalta.append(
+							kyselytaulut[i] + 
+							' inner join ' +
+							kyselytaulut[i+1] +
+							' ON (') +
+							kyselytaulut[i] + '.'
+							con.pkey(kyselytaulut[i]) + '=' +
+							kyselytaulut[i+1] + '.' +
+							con.pkey(kyselytaulut[i]) + ') '
+							)
+
+							
+			else:
+				if ((kyselytaulut[i] == 'rooli') and (kyselytaulut[i + 1] == 'oopperaesitys')):
+					taalta.append('rooli ' )
+				elif kyselytaulut[i].endswith('kombinaatio'):
+					taalta.append("inner join " +  
+							kyselytaulut[i] + 
+							" ON (" + 
+							kyselytaulut[i] + "." + 
+							con.pkey(kyselytaulut[i-1]) + "=" +
+							kyselytaulut[i+1] + "." +
+							con.pkey(kyselytaulut[i-1])+ ") ")
+				else:
+					taalta.append("inner join " +  
+							kyselytaulut[i] + 
+							" ON (" + 
+							kyselytaulut[i] + "." + 
+							con.pkey(kyselytaulut[i]) + "=" +
+							kyselytaulut[(i)] + "." +
+							con.pkey(kyselytaulut[i]) + ") ")
+		taalta_osa = ''.join(taalta)
+		print
+		print
+		print taalta_osa
+		print
+		print
+
+
 		#if 'oopnimi' in tarv_kentat or 'saveltaja' in tarv_kentat:
 		#	print
 
@@ -243,9 +362,10 @@ def hae_tarkemmin():
 		ooptsij = {'ooptalonsijainti' : request.GET.get('ooptalonsijainti','').strip()}
 		hakukrit = []
 		for kentta in (oop,sav,roolinimi,aaniala,paiva,fest,etusuk,ammatti,ryhn,ryht,ooptalo,ooptsij):
-			if (''.join(kentta.values())) != "":
+			if kentta.get(''.join(kentta.keys())) != '':
 				hakukrit.append(kentta)
-		if pelkat_es == "true":
+
+		if pelkat_es == 'true':
 			hakukrit.append({'onkoesiintyja' : pelkat_es})
 		
 		for kentta in hakukrit:
