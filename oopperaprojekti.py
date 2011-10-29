@@ -250,45 +250,36 @@ class Hakija:
 
 		# Luodaan sql-kyselyn from-osa. Avuksi tarvitaan PyGreSql-lisäosan db-luokkaa.
 		con = db_yhteys('oopperatietokanta','localhost','verneri','kissa')
-		
+		print con.pkey(kyselytaulut[1])	
 		taalta = []
 
 		for i in range(len(kyselytaulut)):
 			if i == 0:
-				if ((kyselytaulut[i] == 'rooli') and (kyselytaulut[i + 1] == 'oopperaesitys')):
-					taalta.append('from rooli inner join rse_kombinaatio ON (rooli.rooli_id = rse_kombinaatio-rooli_id)' )
-				else:
-					taalta.append(
-							kyselytaulut[i] + 
-							' inner join ' +
-							kyselytaulut[i+1] +
-							' ON (') +
-							kyselytaulut[i] + '.'
-							con.pkey(kyselytaulut[i]) + '=' +
-							kyselytaulut[i+1] + '.' +
-							con.pkey(kyselytaulut[i]) + ') '
-							)
-
+				taalta.append('from ' + kyselytaulut[i] + ' ')
 							
-			else:
-				if ((kyselytaulut[i] == 'rooli') and (kyselytaulut[i + 1] == 'oopperaesitys')):
-					taalta.append('rooli ' )
-				elif kyselytaulut[i].endswith('kombinaatio'):
+			elif ((kyselytaulut[i] == 'oopperaesitys') and (kyselytaulut[i - 1] == 'rooli')):
+				taalta.append('inner join rse_kombinaatio ON (rooli.rooli_id = rse_kombinaatio-rooli_id) ')
+			
+			elif (kyselytaulut[i] == 'rse_kombinaatio' and kyselytaulut[i - 1] == 'oopperaesitys'):
+				if kyselytaulut[i-2] == 'rooli':
+					taalta.append('inner join oopperaesitys ON (oopperaesitys.esitys_id = rse_kombinaatio.esitys_id) ')
+			
+			elif kyselytaulut[i].endswith('kombinaatio'):
 					taalta.append("inner join " +  
 							kyselytaulut[i] + 
 							" ON (" + 
 							kyselytaulut[i] + "." + 
-							con.pkey(kyselytaulut[i-1]) + "=" +
+							(con.pkey(kyselytaulut[i+1])) + "=" +
 							kyselytaulut[i+1] + "." +
-							con.pkey(kyselytaulut[i-1])+ ") ")
-				else:
-					taalta.append("inner join " +  
-							kyselytaulut[i] + 
-							" ON (" + 
-							kyselytaulut[i] + "." + 
-							con.pkey(kyselytaulut[i]) + "=" +
-							kyselytaulut[(i)] + "." +
-							con.pkey(kyselytaulut[i]) + ") ")
+							(con.pkey(kyselytaulut[i+1])) + ") ")
+			else:
+				taalta.append("inner join " +  
+					kyselytaulut[i] + 
+					" ON (" + 
+					kyselytaulut[i] + "." + 
+					(con.pkey(kyselytaulut[i])) + "=" +
+					kyselytaulut[(i)] + "." +
+					(con.pkey(kyselytaulut[i])) + ") ")
 		taalta_osa = ''.join(taalta)
 		print
 		print
