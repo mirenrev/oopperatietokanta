@@ -40,7 +40,7 @@ class Hakija:
 		self.runko = []			# Hakutuloksen runko (esittäjät ja roolit, lavastajat, kapellimestari...)
 		self.ryhma = []			# Hakutuloksen ryhmät (orkesteri, tanssiryhmät...)
 		self.lopputulos = [self.ots, self.runko, self.ryhma]
-		print type(self.hakukrit)
+		#print type(self.hakukrit)
 		self.rajaus_kentta = []		# Hakukriteereistä luotu lista taulujen kentistä ja mitä niistä haetaan
 		
 		# Jos hakukriteereitä on ja jos ne ovat tyyppiä dictionary. Tämä suoritetaan vain, jos hakukriteerit
@@ -54,16 +54,16 @@ class Hakija:
 							self.rajaus_kentta.append({'sukunimi' : item.get(sana).split()})
 						else:
 							self.rajaus_kentta.append({sana : item.get(sana).split()})
-		print self.rajaus_kentta
+		#print str(self.rajaus_kentta) + 'jee'
 
 	def haelopputulos(self):
 		return self.lopputulos
 
-	def muotoile_tulos(self,tuloslista):
+	def muotoile_tulos(self,hakutulos):
 		
 		#Litistetään listan alilistat yhteen listaan.
-		hakutulos = [s for sanatulos in tuloslista for s in sanatulos]
-
+		#hakutulos = [s for sanatulos in tuloslista for s in sanatulos]
+		#print hakutulos
 		for tulos in hakutulos:
 			# Muotoillaan näytettäville tulostaulukoille otsikko-osat tpl-tiedostolle sopivaan muotoon.
 			# Otsikko-osaan sisällytetään elementit, joiden arvo on useilla riveillä sama.
@@ -159,7 +159,8 @@ class Hakija:
 		for sana in self.hakukrit:
 			tulos = self.yhteys.query(valmis % eval(lop)).dictresult()
 			tulokset.append(tulos)
-		self.muotoile_tulos(tulokset)
+		hakutulos = [s for tulos in tulokset for s in tulos]
+		self.muotoile_tulos(hakutulos)
 	
 	# Funktio luo tarkennetun haun select-osan
 
@@ -283,25 +284,46 @@ class Hakija:
 		return '\n' + ''.join(taalta) + '\n'
 		
 	def luo_where_osa(self):
+		valiaik = []
+		loppuosa = ['', '\n\tWHERE']
+		for item in self.rajaus_kentta:
+			print item
+			if ''.join(item.get(''.join(item.keys()))) != '--':
+				valiaik.append(item)
 		
-		loppuosa = ['\n\tWHERE']
+		print self.rajaus_kentta
+		print valiaik
 
-		for i in range(len(self.rajaus_kentta)):
-			print self.rajaus_kentta[i].get(''.join(self.rajaus_kentta[i].keys())) 	
-			print type(''.join(self.rajaus_kentta[i].keys()))
-			for lista in self.rajaus_kentta[i].keys():
-				if self.rajaus_kentta[i].get(''.join(self.rajaus_kentta[i].keys())) != '--' and (''.join(self.rajaus_kentta[i].keys()) not in ['paivamaara','esiintyja']):
+		for i in range(len(valiaik)):
+			
+			for sana in valiaik[i].get(''.join(valiaik[i].keys())):
+				#print sana
+				andor = '\t\tAND'
+				if ''.join(valiaik[i].keys()) in loppuosa[-1]:
+					andor = '\t\tOR'
+
+				if ''.join(valiaik[i].keys()) == 'paivamaara':
+					if loppuosa[-1] != '\n\tWHERE':
+						loppuosa.append(andor)
+					loppuosa.append("\n\t\t\tpaivamaara > '1900-01-01'")
+				elif ''.join(valiaik[i].keys()) == 'esiintyja':
+					if loppuosa[-1] != '\n\t':
+						loppuosa.append(andor)
+					loppuosa.append("\n\t\t\tesiintyja = 'true'")
+				else:
+					if loppuosa[-1] != '\n\tWHERE':
+						loppuosa.append(andor)
 					loppuosa.append(
-							'\n\t\t\t' + ''.join(self.rajaus_kentta[i].keys()) +
+							'\n\t\t\t' + ''.join(valiaik[i].keys()) +
 							" like '%" +
-							''.join(self.rajaus_kentta[i].get(''.join(self.rajaus_kentta[i].keys()))) +
+							sana +
 							"%'\n"
 							) 
-					loppuosa.append('\t\tAND')
-		
-		if loppuosa[-1] == '\t\tAND':
+
+		if loppuosa[-1] == '\t\tOR' or loppuosa[-1] == '\t\tAND':
 			loppuosa.pop(-1)
 		
+		print loppuosa
 		return ''.join(loppuosa)
 		
 
@@ -310,17 +332,18 @@ class Hakija:
 
 		## Hakulauseen alku
 		haunalku = self.luo_select_osa()
-		print haunalku
+		#print haunalku
 
 		## Hakulauseen from-osa		
 		from_osa = self.luo_from_osa()	
-		print from_osa
+		#print from_osa
 
 		## Luodaan kyselyn where-osa.
 		where_osa = self.luo_where_osa()
 		print haunalku + from_osa + where_osa
 
 		tulos = self.yhteys.query(haunalku + from_osa + where_osa).dictresult()
+		print tulos
 		self.muotoile_tulos(tulos)
 
 
@@ -394,8 +417,8 @@ def hae_tarkemmin():
 		if pelkat_es == 'true':
 			hakukrit.append({'esiintyja' : pelkat_es})
 		
-		for kentta in hakukrit:
-			print kentta	
+		#for kentta in hakukrit:
+		#	print kentta	
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		tark = Hakija(yhteys,hakukrit)
 		tark.tarkhaku()
@@ -413,7 +436,7 @@ def tulossivu():
 	yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 	tulos = yhteys.query("select ooppera.ooppera_id,rooli.ooppera_id,oopnimi,saveltaja,roolinimi,aaniala,esiintyja from ooppera inner join rooli ON (ooppera.ooppera_id = rooli.ooppera_id)")
 	pal = tulos.getresult()
-	print pal
+	#print pal
 	output = template('ooptaulukko',rivit=pal)
 	yhteys.close()
 	return output
