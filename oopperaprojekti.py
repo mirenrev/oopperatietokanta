@@ -34,13 +34,27 @@ class Hakija:
 	runko_sar = ['roolinimi','aaniala','etunimi','sukunimi','ammatti']
 
 	def __init__(self,yhteys,hakukrit):
-		self.hakukrit = hakukrit
-		self.yhteys = yhteys
-		self.ots = []
-		self.runko = []
-		self.ryhma = []
-		self.kentat = []
+		self.hakukrit = hakukrit 	# Annetut hakukriteerit
+		self.yhteys = yhteys		# Tietokantayhteys
+		self.ots = []			# Hakutuloksen otsikko
+		self.runko = []			# Hakutuloksen runko (esittäjät ja roolit, lavastajat, kapellimestari...)
+		self.ryhma = []			# Hakutuloksen ryhmät (orkesteri, tanssiryhmät...)
 		self.lopputulos = [self.ots, self.runko, self.ryhma]
+		print type(self.hakukrit)
+		self.rajaus_kentta = []		# Hakukriteereistä luotu lista taulujen kentistä ja mitä niistä haetaan
+		
+		# Jos hakukriteereitä on ja jos ne ovat tyyppiä dictionary. Tämä suoritetaan vain, jos hakukriteerit
+		# ovat peräisin tarkennetusta hausta.
+		if (len(self.hakukrit) > 0):
+			if type(self.hakukrit[0]) == type({}):
+				for item in self.hakukrit:
+					for sana in item.keys():
+						if sana == 'etunimisukunimi':
+							self.rajaus_kentta.append({'etunimi' : item.get(sana).split()})
+							self.rajaus_kentta.append({'sukunimi' : item.get(sana).split()})
+						else:
+							self.rajaus_kentta.append({sana : item.get(sana).split()})
+		print self.rajaus_kentta
 
 	def haelopputulos(self):
 		return self.lopputulos
@@ -91,8 +105,7 @@ class Hakija:
 	
 	def jasenna_paivays(self,paivamaara):
 		return 1
-
-
+	
 	def haekaikesta(self):
 		tulokset = []
 		#db = db_yhteys('oopperatietokanta','localhost','verneri','kissa')
@@ -148,41 +161,31 @@ class Hakija:
 			tulokset.append(tulos)
 		self.muotoile_tulos(tulokset)
 	
-	def tarkhaku(self):
-		tulokset = []
-		kysytyt_taulut = []
-		tarv_taulut = []
-		rajaus_kentat = []
-		for item in self.hakukrit:
-			for sana in item.keys():
-				if sana == 'etunimisukunimi':
-					rajaus_kentat.append({'etunimi' : item.get(sana).split()})
-					rajaus_kentat.append({'sukunimi' : item.get(sana).split()})
-				else:
-					rajaus_kentat.append({sana : item.get(sana).split()})
-				
-		print rajaus_kentat
+	# Funktio luo tarkennetun haun select-osan
 
-		## Hakulauseen alku
-
+	def luo_select_osa(self):
 		haunalku = ['SELECT ']
-		for i in range(len(rajaus_kentat)):
-			if i < (len(rajaus_kentat) - 1):
-				haunalku.append(''.join(rajaus_kentat[i].keys()))
+		for i in range(len(self.rajaus_kentta)):
+			if i < (len(self.rajaus_kentta) - 1):
+				haunalku.append(''.join(self.rajaus_kentta[i].keys()))
 				haunalku.append(',')
 			else:
-				haunalku.append(''.join(rajaus_kentat[i].keys()))
+				haunalku.append(''.join(self.rajaus_kentta[i].keys()))
+		print ''.join(haunalku)	
+		return '\n\t' + ''.join(haunalku) + '\n'
 
-		print ''.join(haunalku)
-		
+	# Tämä funktio luo tarkennettuun hakuun from-osan eli luettelee taulu ja joinit.
+
+	def luo_from_osa(self):
+
 		## Luodaan mahdolliset tauluyhdistelmät:
-
-		for y in rajaus_kentat:
+		tarv_taulut = []
+		for y in self.rajaus_kentta:
 			for x in y.keys():
 				if x == 'oopnimi' or x == 'saveltaja':
 					if 'ooppera' not in tarv_taulut:
 						tarv_taulut.append('ooppera')
-				if x == 'roolinimi' or x == 'onkoesiintyja' or x == 'aaniala':
+				if x == 'roolinimi' or x == 'esiintyja' or x == 'aaniala':
 					if 'rooli' not in tarv_taulut:
 						tarv_taulut.append('rooli')
 				if x == 'paivamaara' or x == 'festivaali':
@@ -202,8 +205,8 @@ class Hakija:
 				tarv_taulut.append('rse_kombinaatio')
 
 		if 'ooppera' in tarv_taulut and 'oopperatalo' in tarv_taulut:
-			if 'ooppera_esitys' not in tarv_taulut:
-				tarv_taulut.append('ooppera_esitys')
+			if 'oopperaesitys' not in tarv_taulut:
+				tarv_taulut.append('oopperaesitys')
 
 		if ('rooli' in tarv_taulut or 'oopperaesitys' in tarv_taulut) and 'henkilo' in tarv_taulut:
 			if 'rse_kombinaatio' not in tarv_taulut:
@@ -229,9 +232,10 @@ class Hakija:
 				tarv_taulut.append('oopperaesitys')
 			if 'rse_kombinaatio' not in tarv_taulut:
 				tarv_taulut.append('rse_kombinaatio')
-			
-				
-			
+
+		print tarv_taulut
+
+
 		## Taulujen oikea järjestys kyselyjä varten:
 
 		jarjestys = ['ooppera','rooli','oopperaesitys','rse_kombinaatio','henkilo','oopperatalo','ryhma_esitys_kombinaatio','ryhma']
@@ -249,51 +253,82 @@ class Hakija:
 		print kyselytaulut
 
 		# Luodaan sql-kyselyn from-osa. Avuksi tarvitaan PyGreSql-lisäosan db-luokkaa.
-		con = db_yhteys('oopperatietokanta','localhost','verneri','kissa')
-		print con.pkey(kyselytaulut[1])	
+		yht = db_yhteys('oopperatietokanta','localhost','verneri','kissa')
 		taalta = []
+		def liita_ryhma():
+			taalta.append('\n\tinner join ryhma_esitys_kombinaatio as ryhes ON \n\t\t(ryhes.esitys_id = oopperaesitys.esitys_id) ' +
+					'\n\tinner join ryhma ON \n\t\t(ryhes.ryhma_id = ryhma.ryhma_id)'
+					)
 
 		for i in range(len(kyselytaulut)):
 			if i == 0:
-				taalta.append('from ' + kyselytaulut[i] + ' ')
-							
-			elif ((kyselytaulut[i] == 'oopperaesitys') and (kyselytaulut[i - 1] == 'rooli')):
-				taalta.append('inner join rse_kombinaatio ON (rooli.rooli_id = rse_kombinaatio-rooli_id) ')
-			
-			elif (kyselytaulut[i] == 'rse_kombinaatio' and kyselytaulut[i - 1] == 'oopperaesitys'):
-				if kyselytaulut[i-2] == 'rooli':
-					taalta.append('inner join oopperaesitys ON (oopperaesitys.esitys_id = rse_kombinaatio.esitys_id) ')
-			
-			elif kyselytaulut[i].endswith('kombinaatio'):
-					taalta.append("inner join " +  
-							kyselytaulut[i] + 
-							" ON (" + 
-							kyselytaulut[i] + "." + 
-							(con.pkey(kyselytaulut[i+1])) + "=" +
-							kyselytaulut[i+1] + "." +
-							(con.pkey(kyselytaulut[i+1])) + ") ")
+				taalta.append('\tfrom ' + kyselytaulut[i] + ' ')
 			else:
-				taalta.append("inner join " +  
-					kyselytaulut[i] + 
-					" ON (" + 
-					kyselytaulut[i] + "." + 
-					(con.pkey(kyselytaulut[i])) + "=" +
-					kyselytaulut[(i)] + "." +
-					(con.pkey(kyselytaulut[i])) + ") ")
-		taalta_osa = ''.join(taalta)
-		print
-		print
-		print taalta_osa
-		print
-		print
+				if kyselytaulut[i] == 'rooli':
+					taalta.append('\n\tinner join rooli ON (ooppera.ooppera_id = rooli.ooppera_id) ')
+				elif kyselytaulut[i] == 'oopperaesitys':
+					taalta.append('\n\tinner join oopperaesitys ON \n\t\t(ooppera.ooppera_id = oopperaesitys.ooppera_id) ')
+				elif kyselytaulut[i] == 'rse_kombinaatio':
+					taalta.append('\n\tinner join rse_kombinaatio ON \n\t\t' + '(' +
+							kyselytaulut[i-1] + '.' + yht.pkey(kyselytaulut[i-1]) + 
+							'=rse_kombinaatio.' + yht.pkey(kyselytaulut[i-1]) + ') ')
+				elif kyselytaulut[i] == 'henkilo':
+					taalta.append('\n\tinner join henkilo ON \n\t\t(henkilo.henkilo_id = rse_kombinaatio.henkilo_id )')
+				elif kyselytaulut[i] == 'oopperatalo':
+					taalta.append('\n\tinner join oopperatalo ON \n\t\t(oopperatalo.talo_id = oopperaesitys.talo_id) ')
+				elif kyselytaulut[i] == 'ryhma_esitys_kombinaatio':
+					liita_ryhma()
+					break
+										
+		return '\n' + ''.join(taalta) + '\n'
+		
+	def luo_where_osa(self):
+		
+		loppuosa = ['\n\tWHERE']
+
+		for i in range(len(self.rajaus_kentta)):
+			print self.rajaus_kentta[i].get(''.join(self.rajaus_kentta[i].keys())) 	
+			print type(''.join(self.rajaus_kentta[i].keys()))
+			for lista in self.rajaus_kentta[i].keys():
+				if self.rajaus_kentta[i].get(''.join(self.rajaus_kentta[i].keys())) != '--' and (''.join(self.rajaus_kentta[i].keys()) not in ['paivamaara','esiintyja']):
+					loppuosa.append(
+							'\n\t\t\t' + ''.join(self.rajaus_kentta[i].keys()) +
+							" like '%" +
+							''.join(self.rajaus_kentta[i].get(''.join(self.rajaus_kentta[i].keys()))) +
+							"%'\n"
+							) 
+					loppuosa.append('\t\tAND')
+		
+		if loppuosa[-1] == '\t\tAND':
+			loppuosa.pop(-1)
+		
+		return ''.join(loppuosa)
+		
+
+	
+	def tarkhaku(self):
+
+		## Hakulauseen alku
+		haunalku = self.luo_select_osa()
+		print haunalku
+
+		## Hakulauseen from-osa		
+		from_osa = self.luo_from_osa()	
+		print from_osa
+
+		## Luodaan kyselyn where-osa.
+		where_osa = self.luo_where_osa()
+		print haunalku + from_osa + where_osa
+
+		tulos = self.yhteys.query(haunalku + from_osa + where_osa).dictresult()
+		self.muotoile_tulos(tulos)
 
 
-		#if 'oopnimi' in tarv_kentat or 'saveltaja' in tarv_kentat:
-		#	print
 
 # Alustava funktio kaiken mahdollisen tiedon lisaamiseen tietokantaan
 
 @oop.route('/lisaa', method='GET')
+				
 def lisaa_kantaan():
 	if request.GET.get('save','').strip():
 		ooppera = request.GET.get('oopnimi','').strip()
@@ -357,16 +392,16 @@ def hae_tarkemmin():
 				hakukrit.append(kentta)
 
 		if pelkat_es == 'true':
-			hakukrit.append({'onkoesiintyja' : pelkat_es})
+			hakukrit.append({'esiintyja' : pelkat_es})
 		
 		for kentta in hakukrit:
 			print kentta	
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		tark = Hakija(yhteys,hakukrit)
 		tark.tarkhaku()
-		#output = template('tulostaulukko', rivit = tark.haelopputulos())
+		output = template('tulostaulukko', rivit = tark.haelopputulos())
 		yhteys.close()
-		#return output
+		return output
 	else:
 		return template('tarkhaku.tpl')
 
