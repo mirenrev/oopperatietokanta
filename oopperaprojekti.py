@@ -176,7 +176,7 @@ class Hakija:
 			haunalku.remove('esiintyja')
 
 		if haunalku[-1] == ',':
-			haunalku.pop()
+			haunalku.pop(-1)
 		print str(haunalku) + 'jee'
 		print '-------------------------------------------------------'
 		return '\n\t' + ''.join(haunalku) + '\n'
@@ -317,11 +317,23 @@ class Hakija:
 		if len(valiaik) > 0:
 			for i in range(len(valiaik)):
 				
-				for sana in valiaik[i].get(''.join(valiaik[i].keys())):
-					#print sana
+				for j in range(len(valiaik[i].get(''.join(valiaik[i].keys())))):
+					if j == 0:
+						if len(valiaik[i].get(''.join(valiaik[i].keys()))) == 0:
+							if loppuosa[-1] != '\n\tWHERE':
+								loppuosa.append('\t\tAND')
+							loppuosa.append('\n\t\t\t' + ''.join(valiaik[i].keys()) + 
+									"like '%" + 
+									(valiaik[i].get(''.join(valiaik[i].keys())))[0]) + 
+									"%'\n"
+					
+					
+					"""
 					andor = '\t\tAND'
 					if ''.join(valiaik[i].keys()) in loppuosa[-1]:
 						andor = '\t\tOR'
+						if loppuosa[-2] == '\t\tAND' or loppuosa[-2] == '\n\tWHERE':
+							loppuosa.insert(-1,'\n\n\t\t(')
 
 					if ''.join(valiaik[i].keys()) == 'paivamaara':
 						if loppuosa[-1] != '\n\tWHERE':
@@ -340,7 +352,7 @@ class Hakija:
 								sana +
 								"%'\n"
 								) 
-
+					"""
 			if loppuosa[-1] == '\t\tOR' or loppuosa[-1] == '\t\tAND':
 				loppuosa.pop(-1)
 			
