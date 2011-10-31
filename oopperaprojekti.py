@@ -167,12 +167,18 @@ class Hakija:
 	def luo_select_osa(self):
 		haunalku = ['SELECT ']
 		for i in range(len(self.rajaus_kentta)):
-			if i < (len(self.rajaus_kentta) - 1):
-				haunalku.append(''.join(self.rajaus_kentta[i].keys()))
-				haunalku.append(',')
-			else:
-				haunalku.append(''.join(self.rajaus_kentta[i].keys()))
-		print ''.join(haunalku)	
+			haunalku.append(''.join(self.rajaus_kentta[i].keys()))
+			haunalku.append(',')
+		
+		print '-------------------------------------------------------'
+		print str(haunalku) + 'jee'	
+		if 'aaniala' not in haunalku and 'roolinimi' not in haunalku and 'esiintyja' in haunalku:
+			haunalku.remove('esiintyja')
+
+		if haunalku[-1] == ',':
+			haunalku.pop()
+		print str(haunalku) + 'jee'
+		print '-------------------------------------------------------'
 		return '\n\t' + ''.join(haunalku) + '\n'
 
 	# Tämä funktio luo tarkennettuun hakuun from-osan eli luettelee taulu ja joinit.
@@ -180,13 +186,15 @@ class Hakija:
 	def luo_from_osa(self):
 
 		## Luodaan mahdolliset tauluyhdistelmät:
+		print 'rajauskentta__________________________________'
+		print self.rajaus_kentta
 		tarv_taulut = []
 		for y in self.rajaus_kentta:
 			for x in y.keys():
 				if x == 'oopnimi' or x == 'saveltaja':
 					if 'ooppera' not in tarv_taulut:
 						tarv_taulut.append('ooppera')
-				if x == 'roolinimi' or x == 'esiintyja' or x == 'aaniala':
+				if x == 'roolinimi' or x == 'aaniala':
 					if 'rooli' not in tarv_taulut:
 						tarv_taulut.append('rooli')
 				if x == 'paivamaara' or x == 'festivaali':
@@ -201,11 +209,17 @@ class Hakija:
 				if x == 'ryhmannimi' or x == 'ryhmantehtava':
 					if 'ryhma' not in tarv_taulut:
 						tarv_taulut.append('ryhma')
+		print tarv_taulut
 		if ('rooli' in tarv_taulut and 'oopperaesitys' in tarv_taulut):
 			if 'rse_kombinaatio' not in tarv_taulut:
 				tarv_taulut.append('rse_kombinaatio')
+		elif ('rooli' in tarv_taulut and 'oopperatalo' in tarv_taulut):
+			if 'rse_kombinaatio' not in tarv_taulut:
+				tarv_taulut.append('rse_kombinaatio')
+			if 'oopperaesitys' not in tarv_taulut:
+				tarv_taulut.append('oopperaesitys')
 
-		if 'ooppera' in tarv_taulut and 'oopperatalo' in tarv_taulut:
+		if ('ooppera' in tarv_taulut and 'oopperatalo' in tarv_taulut):
 			if 'oopperaesitys' not in tarv_taulut:
 				tarv_taulut.append('oopperaesitys')
 
@@ -235,6 +249,7 @@ class Hakija:
 				tarv_taulut.append('rse_kombinaatio')
 
 		print tarv_taulut
+		print 'tarv taululut valmis__________________________________________________________'
 
 
 		## Taulujen oikea järjestys kyselyjä varten:
@@ -252,7 +267,7 @@ class Hakija:
 		print; print; print
 
 		print kyselytaulut
-
+		print '---------------------------------'
 		# Luodaan sql-kyselyn from-osa. Avuksi tarvitaan PyGreSql-lisäosan db-luokkaa.
 		yht = db_yhteys('oopperatietokanta','localhost','verneri','kissa')
 		taalta = []
@@ -268,11 +283,16 @@ class Hakija:
 				if kyselytaulut[i] == 'rooli':
 					taalta.append('\n\tinner join rooli ON (ooppera.ooppera_id = rooli.ooppera_id) ')
 				elif kyselytaulut[i] == 'oopperaesitys':
-					taalta.append('\n\tinner join oopperaesitys ON \n\t\t(ooppera.ooppera_id = oopperaesitys.ooppera_id) ')
+					if 'rooli' not in kyselytaulut:
+						taalta.append('\n\tinner join oopperaesitys ON \n\t\t(ooppera.ooppera_id = oopperaesitys.ooppera_id) ')
 				elif kyselytaulut[i] == 'rse_kombinaatio':
-					taalta.append('\n\tinner join rse_kombinaatio ON \n\t\t' + '(' +
-							kyselytaulut[i-1] + '.' + yht.pkey(kyselytaulut[i-1]) + 
-							'=rse_kombinaatio.' + yht.pkey(kyselytaulut[i-1]) + ') ')
+					if 'oopperaesitys' in kyselytaulut and 'rooli' in kyselytaulut:
+						taalta.append('\n\tinner join rse_kombinaatio ON \n\t\t(rooli.rooli_id = rse_kombinaatio.rooli_id) ')
+						taalta.append('\n\tinner join oopperaesitys  ON \n\t\t(oopperaesitys.esitys_id = rse_kombinaatio.esitys_id)' )
+					elif 'oopperaesitys' in kyselytaulut:
+						taalta.append('\n\tinner join rse_kombinaatio ON \n\t\t(ooppera_esitys.esitys_id = rse_kombinaatio.esitys_id) ')
+					elif 'rooli' in kyselytaulut:
+						taalta.append('\n\tinner join rse_kombinaatio ON \n\t\t(rooli.rooli_id = rse_kombinaatio.rooli_id)')
 				elif kyselytaulut[i] == 'henkilo':
 					taalta.append('\n\tinner join henkilo ON \n\t\t(henkilo.henkilo_id = rse_kombinaatio.henkilo_id )')
 				elif kyselytaulut[i] == 'oopperatalo':
@@ -294,38 +314,40 @@ class Hakija:
 		print self.rajaus_kentta
 		print valiaik
 
-		for i in range(len(valiaik)):
+		if len(valiaik) > 0:
+			for i in range(len(valiaik)):
+				
+				for sana in valiaik[i].get(''.join(valiaik[i].keys())):
+					#print sana
+					andor = '\t\tAND'
+					if ''.join(valiaik[i].keys()) in loppuosa[-1]:
+						andor = '\t\tOR'
+
+					if ''.join(valiaik[i].keys()) == 'paivamaara':
+						if loppuosa[-1] != '\n\tWHERE':
+							loppuosa.append(andor)
+						loppuosa.append("\n\t\t\tpaivamaara > '1900-01-01'")
+					elif ''.join(valiaik[i].keys()) == 'esiintyja':
+						if loppuosa[-1] != '\n\tWHERE':
+							loppuosa.append(andor)
+						loppuosa.append("\n\t\t\tesiintyja = 'true'")
+					else:
+						if loppuosa[-1] != '\n\tWHERE':
+							loppuosa.append(andor)
+						loppuosa.append(
+								'\n\t\t\t' + ''.join(valiaik[i].keys()) +
+								" like '%" +
+								sana +
+								"%'\n"
+								) 
+
+			if loppuosa[-1] == '\t\tOR' or loppuosa[-1] == '\t\tAND':
+				loppuosa.pop(-1)
 			
-			for sana in valiaik[i].get(''.join(valiaik[i].keys())):
-				#print sana
-				andor = '\t\tAND'
-				if ''.join(valiaik[i].keys()) in loppuosa[-1]:
-					andor = '\t\tOR'
-
-				if ''.join(valiaik[i].keys()) == 'paivamaara':
-					if loppuosa[-1] != '\n\tWHERE':
-						loppuosa.append(andor)
-					loppuosa.append("\n\t\t\tpaivamaara > '1900-01-01'")
-				elif ''.join(valiaik[i].keys()) == 'esiintyja':
-					if loppuosa[-1] != '\n\t':
-						loppuosa.append(andor)
-					loppuosa.append("\n\t\t\tesiintyja = 'true'")
-				else:
-					if loppuosa[-1] != '\n\tWHERE':
-						loppuosa.append(andor)
-					loppuosa.append(
-							'\n\t\t\t' + ''.join(valiaik[i].keys()) +
-							" like '%" +
-							sana +
-							"%'\n"
-							) 
-
-		if loppuosa[-1] == '\t\tOR' or loppuosa[-1] == '\t\tAND':
-			loppuosa.pop(-1)
+			print loppuosa
+			return ''.join(loppuosa)
 		
-		print loppuosa
-		return ''.join(loppuosa)
-		
+		else: return ''
 
 	
 	def tarkhaku(self):
