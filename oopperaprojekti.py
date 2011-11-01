@@ -180,7 +180,7 @@ class Hakija:
 	# Tämä funktio luo tarkennettuun hakuun from-osan eli luettelee taulu ja joinit.
 
 	def luo_from_osa(self):
-
+		print 5 * '\n' + '--------------------Tulostetta luo_from_osa-funktiosta--------------------'
 		## Luodaan mahdolliset tauluyhdistelmät:
 		print 'rajauskentta__________________________________'
 		print self.rajaus_kentta
@@ -297,10 +297,11 @@ class Hakija:
 					liita_ryhma()
 					break
 										
+		print '_____________________________________________________________________________________________'
 		return '\n' + ''.join(taalta) + '\n'
 		
 	def luo_where_osa(self):
-		print '-------------------Tulostetta luo_where_osa-funktiosta----------------'
+		print 5 * '\n' + '-------------------Tulostetta luo_where_osa-funktiosta----------------'
 		valiaik = []
 		loppuosa = ['', '\n\tWHERE']
 		for item in self.rajaus_kentta:
@@ -343,7 +344,7 @@ class Hakija:
 								loppuosa.append('\t\tOR')
 								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'")
 								loppuosa.append('\n\t\t)\n')
-					## Käsitellään muut kenttä-ehto-parit lukuun ottamatta viimeistä
+					## Käsitellään muut kenttä-ehto-parit 
 					elif i > 0: ##0 < i < (len(valiaik) - 1):
 						if len(ehdot) == 1:
 							loppuosa.append('\t\tAND')
