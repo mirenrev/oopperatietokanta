@@ -35,9 +35,13 @@
 				<br/>
 				<input type="text" size="40" maxlength="40" name="festivaali" value=" -- " />
 				<br/>
-				<label>Hae esiintyjän tai taustahenkilön nimellä</label>
+				<label>Hae esiintyjän tai taustahenkilön etunimellä</label>
 				<br/>
-				<input type="text" size="40" maxlength="40" name="etunimisukunimi" value=" -- " />
+				<input type="text" size="40" maxlength="40" name="etunimi" value=" -- " />
+				<br/>
+				<label>Hae esiintyjän tai taustahenkilön sukunimellä</label>
+				<br/>
+				<input type="text" size="40" maxlength="40" name="sukunimi" value=" -- " />
 				<br/>
 				<label>Hae henkilön ammatin mukaan (esim. sopraano tai valaistussuunn).</label>
 				<br/>

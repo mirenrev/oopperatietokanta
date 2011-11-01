@@ -49,12 +49,8 @@ class Hakija:
 			if type(self.hakukrit[0]) == type({}):
 				for item in self.hakukrit:
 					for sana in item.keys():
-						if sana == 'etunimisukunimi':
-							self.rajaus_kentta.append({'etunimi' : item.get(sana).split()})
-							self.rajaus_kentta.append({'sukunimi' : item.get(sana).split()})
-						else:
-							self.rajaus_kentta.append({sana : item.get(sana).split()})
-		#print str(self.rajaus_kentta) + 'jee'
+						self.rajaus_kentta.append({sana : item.get(sana).split()})
+		print str(self.rajaus_kentta) + 'jee'
 
 	def haelopputulos(self):
 		return self.lopputulos
@@ -304,6 +300,7 @@ class Hakija:
 		return '\n' + ''.join(taalta) + '\n'
 		
 	def luo_where_osa(self):
+		print '-------------------Tulostetta luo_where_osa-funktiosta----------------'
 		valiaik = []
 		loppuosa = ['', '\n\tWHERE']
 		for item in self.rajaus_kentta:
@@ -315,44 +312,55 @@ class Hakija:
 		print valiaik
 
 		if len(valiaik) > 0:
+			## Käydään jokainen kenttä-hakuehto-yhdistelmä läpi.
 			for i in range(len(valiaik)):
-				
-				for j in range(len(valiaik[i].get(''.join(valiaik[i].keys())))):
-					if j == 0:
-						if len(valiaik[i].get(''.join(valiaik[i].keys()))) == 0:
-							if loppuosa[-1] != '\n\tWHERE':
-								loppuosa.append('\t\tAND')
-							loppuosa.append('\n\t\t\t' + ''.join(valiaik[i].keys()) + 
-									"like '%" + 
-									(valiaik[i].get(''.join(valiaik[i].keys())))[0]) + 
-									"%'\n"
-					
-					
-					"""
-					andor = '\t\tAND'
-					if ''.join(valiaik[i].keys()) in loppuosa[-1]:
-						andor = '\t\tOR'
-						if loppuosa[-2] == '\t\tAND' or loppuosa[-2] == '\n\tWHERE':
-							loppuosa.insert(-1,'\n\n\t\t(')
 
-					if ''.join(valiaik[i].keys()) == 'paivamaara':
-						if loppuosa[-1] != '\n\tWHERE':
-							loppuosa.append(andor)
-						loppuosa.append("\n\t\t\tpaivamaara > '1900-01-01'")
-					elif ''.join(valiaik[i].keys()) == 'esiintyja':
-						if loppuosa[-1] != '\n\tWHERE':
-							loppuosa.append(andor)
-						loppuosa.append("\n\t\t\tesiintyja = 'true'")
-					else:
-						if loppuosa[-1] != '\n\tWHERE':
-							loppuosa.append(andor)
-						loppuosa.append(
-								'\n\t\t\t' + ''.join(valiaik[i].keys()) +
-								" like '%" +
-								sana +
-								"%'\n"
-								) 
-					"""
+				## Hakuavaimelle helpommin ymmärrettävä muoto. avain-muuttujan arvo
+				## on hakutaulun kenttä, jolle ehtoja asetetaan:
+				avain = ''.join(valiaik[i].keys())
+
+				## Hakuhedoille helpommin ymmärrettävä muoto. Ehdot-muuttujan arvo on lista
+				## kentästä 'avain' haettavia merkkijonoja:
+				ehdot = valiaik[i].get(''.join(valiaik[i].keys()))
+
+				print '----------------avain ja ehdot-------------'
+				print avain, ehdot
+				print '---------------end------------------'
+
+				for j in range(len(ehdot)):
+					## Käsitellään kenttä-ehto-pareista ensimmäistä:
+					if i == 0:
+						if len(ehdot) == 1:
+							loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
+						elif len(ehdot) > 1:
+							if j == 0:
+								loppuosa.append('\n\t\t(')
+								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
+							elif 0 < j < (len(ehdot) - 1):
+								loppuosa.append('\t\tOR')
+								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
+							else:
+								loppuosa.append('\t\tOR')
+								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'")
+								loppuosa.append('\n\t\t)\n')
+					## Käsitellään muut kenttä-ehto-parit lukuun ottamatta viimeistä
+					elif i > 0: ##0 < i < (len(valiaik) - 1):
+						if len(ehdot) == 1:
+							loppuosa.append('\t\tAND')
+							loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
+						elif len(ehdot) > 1:
+							if j == 0:
+								loppuosa.append('\t\tAND')
+								loppuosa.append('\n\t\t(')
+								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
+							elif 0 < j < (len(ehdot) - 1):
+								loppuosa.append('\t\tOR')
+								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
+							else:
+								loppuosa.append('\t\tOR')
+								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'")
+								loppuosa.append('\n\t\t)\n')
+
 			if loppuosa[-1] == '\t\tOR' or loppuosa[-1] == '\t\tAND':
 				loppuosa.pop(-1)
 			
@@ -385,7 +393,7 @@ class Hakija:
 # Alustava funktio kaiken mahdollisen tiedon lisaamiseen tietokantaan
 
 @oop.route('/lisaa', method='GET')
-				
+		
 def lisaa_kantaan():
 	if request.GET.get('save','').strip():
 		ooppera = request.GET.get('oopnimi','').strip()
@@ -437,17 +445,19 @@ def hae_tarkemmin():
 		aaniala = {'aaniala' : request.GET.get('aaniala','').strip()}
 		paiva = {'paivamaara' : request.GET.get('paivamaara','').strip()}
 		fest= {'festivaali' : request.GET.get('festivaali','').strip()}
-		etusuk = {'etunimisukunimi' : request.GET.get('etunimisukunimi','').strip()}
+		etunimi = {'etunimi' : request.GET.get('etunimi','').strip()}
+		sukunimi = {'sukunimi' : request.GET.get('sukunimi','').strip()}
 		ammatti = {'ammatti' : request.GET.get('ammatti','').strip()}
 		ryhn = {'ryhmannimi' : request.GET.get('ryhmannimi','').strip()}
 		ryht = {'ryhmantehtava' : request.GET.get('ryhmantehtava','').strip()}
 		ooptalo = {'ooptalonnimi' : request.GET.get('ooptalonnimi','').strip()}
 		ooptsij = {'ooptalonsijainti' : request.GET.get('ooptalonsijainti','').strip()}
 		hakukrit = []
-		for kentta in (oop,sav,roolinimi,aaniala,paiva,fest,etusuk,ammatti,ryhn,ryht,ooptalo,ooptsij):
+		for kentta in (oop,sav,roolinimi,aaniala,paiva,fest,etunimi,sukunimi,ammatti,ryhn,ryht,ooptalo,ooptsij):
 			if kentta.get(''.join(kentta.keys())) != '':
 				hakukrit.append(kentta)
-
+		print '-------------------hakukrit haetarkemmin funktiosta----------------------------'
+		print hakukrit
 		if pelkat_es == 'true':
 			hakukrit.append({'esiintyja' : pelkat_es})
 		
