@@ -35,13 +35,53 @@ def onko_paivamaara(pvm_ehdokas):
 				(^(0?[1-9]|1[0-2])[12][0-9]{3}$)			|	## Kuukausi ja vuosiluku
 				(^(0?[1-9]|[12][0-9])(0?[1-9]|1[0-2])[12][0-9]{3}$)	|	## Kuukausi ja vuosi + 1. -29. päivä
 				(^30(0?[13456789]|10|11|12)[12][0-9]{3}$)		|	## Mahdollisten kuukausien 30. päivä + kuukausi ja vuosi
-				(^31(0?[13578]|10|12)\.[12][0-9]{3}$)				## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi
+				(^31(0?[13578]|10|12)[12][0-9]{3}$)				## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi
 				
 				""", pvm_ehdokas,re.X)
+
+	# Muotoillaan päivämäärä sql:lle sopivaksi
 	if pvm != None:
-		print pvm.group()
+		apupaiva = pvm.group()
+		sql_pvm = []
+		# Lisätään vuosiluku ensimmäiseksi lopullisen päivämäärän luovaan listaan.
+		sql_pvm.append(apupaiva[-4:])
+		sql_pvm.append('-')
+		if len(apupaiva) > 4:
+			d = re.findall("\d{1,2}" , apupaiva)
+			## Vuosiluku poistetaan listasta
+			d.pop()
+			d.pop()
+			d.reverse()
+			for kkpp in d:
+				if len(kkpp) == 2:
+					sql_pvm.append(kkpp)
+				else:
+					sql_pvm.append('0' + kkpp)
+				sql_pvm.append('-')
+			print d
+		sql_pvm.pop(-1)
+		print sql_pvm
+	#	paivays = ''.join(sql_pvm)
+	#	print paivays
 	
-onko_paivamaara("13031925")
+	## Varmistetaan, ettei helmikuussa ole 29:ää päivää muulloin kuin karkausvuonna
+	if len(sql_pvm) == 5:
+		if sql_pvm[2] == '02' and sql_pvm[4] == '29':
+			if int(sql_pvm[0]) % 400 == 0:
+				print sql_pvm
+			elif int(sql_pvm[0]) % 100 == 0:
+				sql_pvm.pop(-1)
+				sql_pvm.pop(-1)
+				print sql_pvm
+			elif int(sql_pvm[0]) % 4 == 0:
+				print sql_pvm
+			else:
+				sql_pvm.pop(-1)
+				sql_pvm.pop(-1)
+				print sql_pvm
+
+		
+onko_paivamaara("29.2.1600")
 
 def jasenna_paivays(paivamaara):
 	return 1	
