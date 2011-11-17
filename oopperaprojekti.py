@@ -17,6 +17,8 @@ def db_yhteys(tietokanta,isanta,kayttaja,salasana):
 
 
 def jasenna_paivays(pvm_ehdokas):
+	print "\n------------Tulostetta jasenna_paivays-funktiosta--------------------"
+	print pvm_ehdokas
 	## Pelkkä vuosiluku						
 	## Kuukausi ja vuosiluku
 	## Kuukausi ja vuosi + 1. - 29. päivä
@@ -39,10 +41,11 @@ def jasenna_paivays(pvm_ehdokas):
 				
 				""", pvm_ehdokas,re.X)
 
+	sql_pvm = []
 	# Muotoillaan päivämäärä sql:lle sopivaksi
 	if pvm != None:
 		apupaiva = pvm.group()
-		sql_pvm = []
+		#sql_pvm = []
 		# Lisätään vuosiluku ensimmäiseksi lopullisen päivämäärän luovaan listaan.
 		sql_pvm.append(apupaiva[-4:])
 		sql_pvm.append('-')
@@ -80,6 +83,8 @@ def jasenna_paivays(pvm_ehdokas):
 				sql_pvm.pop(-1)
 				print sql_pvm
 
+	print "\n"
+	return ''.join(sql_pvm)	
 		
 jasenna_paivays("29.2.2000")
 
@@ -380,13 +385,25 @@ class Hakija:
 				if ''.join(item.keys()) == 'paivamaara':
 					# Tässä vaiheessa tiedetään, että avain on 'paivamaara'
 					temp = item.get('paivamaara') 
-					temp = sorted(temp)
+					print temp
+					for i in range(len(temp)):
+						temp[i] = jasenna_paivays(temp[i])
 					# Tarkistetaan, ettei päivämääriä ole enempää kuin kaksi. Jos on, jätetään pienin ja suurin.
+					temp = sorted(temp)
+					
+					# Poistetaan epäkelvot päivämäärät:
+					for pvm in temp:
+						if pvm == '':
+							temp.remove(pvm)
+
 					if len(temp) > 2:
 						for i in range(len(temp)):
 							if i > 0 and i < (len(temp) - 1):
 								temp.pop(i)
+					print 'Tama on temp   ' + str(temp)
 					item['paivamaara'] = temp
+
+
 		print self.rajaus_kentta
 		print valiaik
 
@@ -409,37 +426,29 @@ class Hakija:
 
 				for j in range(len(ehdot)):
 					## Käsitellään kenttä-ehto-pareista ensimmäistä:
-					if i == 0:
+					if avain == 'paivamaara':
+						print	
+					elif i == 0:
 						if len(ehdot) == 1:
-							if avain == 'paivamaara':
-								print
-							elif avain == 'esiintyja':
+							if avain == 'esiintyja':
 								loppuosa.append('\n\t\t\t' + avain + " = '" + ehdot[j] + "'\n")	
 							else:
 								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
 						elif len(ehdot) > 1:
 							if j == 0:
-								if avain == 'paivamaara':
-									print
-								else:
-									loppuosa.append('\n\t\t(')
-									loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
+								loppuosa.append('\n\t\t(')
+								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
 							elif 0 < j < (len(ehdot) - 1):
 								loppuosa.append('\t\tOR')
 								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
 							else:
-								if avain == 'paivamaara':
-									print
-								else:
-									loppuosa.append('\t\tOR')
-									loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'")
-									loppuosa.append('\n\t\t)\n')
+								loppuosa.append('\t\tOR')
+								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'")
+								loppuosa.append('\n\t\t)\n')
 					## Käsitellään muut kenttä-ehto-parit 
 					elif i > 0: ##0 < i < (len(valiaik) - 1):
 						if len(ehdot) == 1:
-							if avain == 'paivamaara':
-								print
-							elif avain == 'esiintyja':
+							if avain == 'esiintyja':
 								loppuosa.append('\t\tAND')
 								loppuosa.append('\n\t\t\t' + avain + " = '" + ehdot[j] + "'\n")	
 								print
@@ -448,22 +457,16 @@ class Hakija:
 								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
 						elif len(ehdot) > 1:
 							if j == 0:
-								if avain == 'paivamaara':
-									print
-								else:
-									loppuosa.append('\t\tAND')
-									loppuosa.append('\n\t\t(')
-									loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
+								loppuosa.append('\t\tAND')
+								loppuosa.append('\n\t\t(')
+								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
 							elif 0 < j < (len(ehdot) - 1):
 								loppuosa.append('\t\tOR')
 								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'\n")
 							else:
-								if avain == 'paivamaara':
-									print
-								else:
-									loppuosa.append('\t\tOR')
-									loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'")
-									loppuosa.append('\n\t\t)\n')
+								loppuosa.append('\t\tOR')
+								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'")
+								loppuosa.append('\n\t\t)\n')
 
 			if loppuosa[-1] == '\t\tOR' or loppuosa[-1] == '\t\tAND':
 				loppuosa.pop(-1)
