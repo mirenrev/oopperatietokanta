@@ -19,11 +19,7 @@ def db_yhteys(tietokanta,isanta,kayttaja,salasana):
 def jasenna_paivays(pvm_ehdokas):
 	print "\n------------Tulostetta jasenna_paivays-funktiosta--------------------"
 	print pvm_ehdokas
-	## Pelkkä vuosiluku						
-	## Kuukausi ja vuosiluku
-	## Kuukausi ja vuosi + 1. - 29. päivä
-	## Mahdollisten kuukausien 30. päivä + kuukausi ja vuosi
-	## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi
+	# Etsitään pisteellä toisistaa erotettuja päiviä, kuukausia ja vuosia.
 	pvm = re.search("""
 			(^[12][0-9]{3}$) 						|	## Pelkkä vuosiluku						
 			(^(0?[1-9]|1[0-2])\.[12][0-9]{3}$) 				|	## Kuukausi ja vuosiluku
@@ -31,6 +27,7 @@ def jasenna_paivays(pvm_ehdokas):
 			(^30\.(0?[13456789]|10|11|12)\.[12][0-9]{3}$)			|	## Mahdollisten kuukausien 30. päivä + kuukausi ja vuosi
 			(^31\.(0?[13578]|10|12)\.[12][0-9]{3})					## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi
 			""", pvm_ehdokas, re.X) 
+	# Etsitään ilman pisteitä syötettyjä päivämääriä.
 	if pvm == None and (len(pvm_ehdokas) == 8 or len(pvm_ehdokas) == 6):
 		pvm = re.search("""
 				
@@ -86,7 +83,7 @@ def jasenna_paivays(pvm_ehdokas):
 	print "\n"
 	return ''.join(sql_pvm)	
 		
-jasenna_paivays("29.2.2000")
+jasenna_paivays("2000")
 
 class Lisaaja:   
 	# Funktio lisaa dataa ooppera-tauluun
@@ -371,7 +368,14 @@ class Hakija:
 										
 		print '_____________________________________________________________________________________________'
 		return '\n' + ''.join(taalta) + '\n'
-		
+
+	# Tämä funktio muokkaa päivämääriä sisältävästä listasta sql-kyselylle sopivan aikavälin. Aikaväli palautetaan 2:n mittaisena taulukkona
+	# pienemmästä yhtäsuureen tai suurempaan.
+	def kasittele_aikavali(paivaykset):
+		aikavali = []
+		for paivays in paivaykset:
+			print
+
 	def luo_where_osa(self):
 		print 5 * '\n' + '-------------------Tulostetta luo_where_osa-funktiosta----------------'
 		
@@ -402,10 +406,13 @@ class Hakija:
 								temp.pop(i)
 					print 'Tama on temp   ' + str(temp)
 					item['paivamaara'] = temp
+					# Poistetaan päivämäärä-kenttä, jos se on nyt tyhjä, ts. siinä ei ole enää kelpoja päivämääriä.
+					if item['paivamaara'] == []:
+						valiaik.remove(item)
 
 
-		print self.rajaus_kentta
-		print valiaik
+		print 'rajaus_kentta:\n' + str(self.rajaus_kentta)
+		print 'valiaik\n' + str(valiaik)
 
 		if len(valiaik) > 0:
 			## Käydään jokainen kenttä-hakuehto-yhdistelmä läpi.
@@ -427,7 +434,12 @@ class Hakija:
 				for j in range(len(ehdot)):
 					## Käsitellään kenttä-ehto-pareista ensimmäistä:
 					if avain == 'paivamaara':
-						print	
+						if len(ehdot) == 1:
+							if i == 0:
+								loppuosa.append('\n\t\t\t' + avain + " = '" + ehdot[j] + "'\n")
+							else:
+								loppuosa.append('\t\tAND')
+								loppuosa.append('\n\t\t\t' + avain + " = '" + ehdot[j] + "'\n")	
 					elif i == 0:
 						if len(ehdot) == 1:
 							if avain == 'esiintyja':
