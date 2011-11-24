@@ -25,7 +25,6 @@ def jasenna_paivays(pvm_ehdokas):
 	print pvm_ehdokas
 	ajankohdat = []
 	for ehdokas in pvm_ehdokas:
-		pvm_tarkkuus = []
 		# Etsitään pisteellä toisistaa erotettuja päiviä, kuukausia ja vuosia.
 		pvm = re.search("""
 				(^[0-9]{2}$)							|	## Pelkkä vuosiluku muodossa vv
@@ -36,11 +35,11 @@ def jasenna_paivays(pvm_ehdokas):
 				(^(0?[1-9]|[12][0-9])\.(0?[1-9]|[1][0-2])\.[0-9]{2}$)		|	## Kuukausi ja vuosi + 1. - 29. päivä muodossa ....vv
 				(^30\.(0?[13456789]|10|11|12)\.[12][0-9]{3}$)			|	## Mahdollisten kuukausien 30. päivä + kuukausi ja vuosi muodossa ....vvvv
 				(^30\.(0?[13456789]|10|11|12)\.[0-9]{2}$)			|	## Mahdollisten kuukausien 30. päivä + kuukausi ja vuosi muodossa ....vv
-				(^31\.(0?[13578]|10|12)\.[12][0-9]{3})				|	## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi
-				(^31\.(0?[13578]|10|12)\.[0-9]{2})					## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi
-				""", pvm_ehdokas, re.X) 
+				(^31\.(0?[13578]|10|12)\.[12][0-9]{3})				|	## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi ....vvvv
+				(^31\.(0?[13578]|10|12)\.[0-9]{2})					## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi ....vv
+				""", ehdokas, re.X) 
 		# Etsitään ilman pisteitä syötettyjä päivämääriä.
-		if pvm == None and (len(pvm_ehdokas) == 8 or len(pvm_ehdokas) == 6):
+		if pvm == None and (len(ehdokas) == 8 or len(ehdokas) == 6 or len(ehdokas) == 4):
 			pvm = re.search("""
 					(^(0[1-9]|1[0-2])[0-9]{2}$)				|	## Kuukausi ja vuosiluku kkvv
 					(^(0[1-9]|1[0-2])(19|20)[0-9]{2}$)			|	## Kuukausi ja vuosiluku kkvvvv
@@ -51,17 +50,18 @@ def jasenna_paivays(pvm_ehdokas):
 					(^30(0[13456789]|10|11|12)[12][0-9]{3}$)		|	## Mahdollisten kuukausien 30. päivä + kuukausi ja vuosi: ppkkvvvv
 					(^31(0[13578]|10|12)[12][0-9]{3}$)				## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi: ppkkvvvv
 					
-					""", pvm_ehdokas,re.X)
+					""", ehdokas,re.X)
+		
+		if pvm != None: print "\n------------Tää on juuri löydetty käsittelemätön päivämäärä.\t" + pvm.group() + '\n'
 
 		sql_pvm = []
-		pvm_tarkkuus.append(sql_pvm)
 		# Muotoillaan päivämäärä sql:lle sopivaksi
 		if pvm != None:
 			# Päivämääräksi tulkittu numerosarja muutetaan stringiksi.
 			apupaiva = pvm.group()
 			# Täydennetään pisteellisten ja kahden mittaisten päivämäärien vuosiluvut 4:n mittaisiksi.
 			if len(apupaiva) == 2:
-				if int(apupaiva) == 30:
+				if int(apupaiva) >= 30:
 					apupaiva = '19' + apupaiva
 				else:
 					apupaiva = '20' + apupaiva
@@ -79,7 +79,7 @@ def jasenna_paivays(pvm_ehdokas):
 				sql_pvm.append('-')
 			# Jos eivät, tulkitaan, että neljänneksi ja kolmanneksi viimeiset kuuluvat kuukauteen. Vuosiluku täydennetään
 			# joko 20:lla tai 19:llä riippuen siitä, onko vuosiluku < 30. Jos on valitaan 20, jos ei valitaan 19.
-			elif int(apupaiva[-2:]) > 30:
+			elif int(apupaiva[-2:]) >= 30:
 				apupaiva = apupaiva[:-2] + '19' + apupaiva[-2:]
 				sql_pvm.append(apupaiva[-4:])
 				sql_pvm.append('-')
@@ -113,9 +113,6 @@ def jasenna_paivays(pvm_ehdokas):
 				print d 
 			sql_pvm.pop(-1)
 
-		#	paivays = ''.join(sql_pvm)
-		#	print paivays
-		
 		## Varmistetaan, ettei helmikuussa ole 29:ää päivää muulloin kuin karkausvuonna
 		if len(sql_pvm) == 5:
 			if sql_pvm[2] == '02' and sql_pvm[4] == '29':
@@ -131,21 +128,81 @@ def jasenna_paivays(pvm_ehdokas):
 					sql_pvm.pop(-1)
 					sql_pvm.pop(-1)
 					print sql_pvm
-		# Jos sql_pvm-listassa on 5 osaa, on kyseessä täydellinen päivämäärä, jos 3, kuukausi ja jos muu eli 1, vuosi.
-		if len(sql_pvm) == 5:
-			pvm_tarkkuus.append('pp')
-		elif len(sql_pvm) == 3:
-			pvm_tarkkuus.append('kk')
-		else:
-			pvm_tarkkuus.append('vv')
-		print sql_pvm
-		print pvm_tarkkuus
-		ajankohdat.append(sql_pvm)
+		if len(sql_pvm) > 0:
+			ajankohdat.append(sql_pvm)
 
+	print '\t\tNää on ajankohdat'
+	print len(ajankohdat)
+	print ajankohdat
+	print len(ajankohdat[0])
+	ajankohdat = sorted(ajankohdat)
+
+	# Otetaan ajankohdista talteen aikaisin ja viimeisin
+	ajat = [ajankohdat[0], ajankohdat[-1]]
+	print str(ajat) + '          ajat'
+	# Täydennetään päivämäärät, joista puuttuu kuukausi tai vuosi
+	if len(ajat[0]) == 1:
+		ajat[0].append('-')
+		ajat[0].append('01')
+		ajat[0].append('-')
+		ajat[0].append('01')
+	elif len(ajat[0]) == 3:
+		ajat[0].append('-')
+		ajat[0].append('01')
+
+	if len(ajat[1]) == 1:
+		ajat[1].append('-')
+		ajat[1].append('12')
+		ajat[1].append('-')
+		ajat[1].append('31')
+	elif len(ajat[1]) == 3:
+		ajat[1].append('-')
+		# Lisätään kuun viimeinen päivä
+		if ajat[1][-2] == '02':
+			if int(ajat[1][0]) % 400 == 0:
+				ajat[1].append('29')
+			elif int(ajat[1][0]) % 100 == 0:
+				ajat[1].append('28')
+			elif int(ajat[1][0]) % 4 == 0:
+				ajat[1].append('29')
+			else:
+				ajat[1].append('28')
+		elif ajat[1][-2] in ['01','03','05','07','08','10','12']:
+			ajat[1].append('31')
+		else:
+			ajat[1].append('30')
+		
+	print len(ajankohdat)
+	if len(ajankohdat) == 1:
+		print len(ajankohdat[0])
+		if len(ajankohdat[0]) == 1:
+			ajat[1][-1] = '31'
+			ajat[1][-3] = '12'
+		if len(ajankohdat[0]) == 3:
+			if ajat[1][-3] == '02':
+				if int(ajat[1][0]) % 400 == 0:
+					ajat[1][-1] = '29'
+				elif int(ajat[1][0]) % 100 == 0:
+					ajat[1][-1] = '28'
+				elif int(ajat[1][0]) % 4 == 0:
+					ajat[1][-1] = '29'
+				else:
+					ajat[1][-1] = '28'
+			elif ajat[1][-3] in ['01','03','05','07','08','10','12']:
+				ajat[1][-1] = '31'
+			else:
+				ajat[1][-1] = '30'
+			
+	print ajat
 	print "\n"
+	palaute = []
+	palaute.append(''.join(ajat[0]))
+	palaute.append(''.join(ajat[1]))
+	print palaute
 	return ''.join(sql_pvm)	
 		
-jasenna_paivays("29.02.02")
+list = ['1997']
+jasenna_paivays(list)
 
 class Lisaaja:   
 	# Funktio lisaa dataa ooppera-tauluun
