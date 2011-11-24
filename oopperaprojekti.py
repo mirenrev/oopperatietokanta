@@ -15,75 +15,137 @@ def db_yhteys(tietokanta,isanta,kayttaja,salasana):
 	con = pg.DB(dbname=tietokanta,host=isanta,user=kayttaja,passwd=salasana)
 	return con
 
+# Funktion on tarkoitus palauttaa sopivasta syötteestä muokattu sql:lle ymmärrettävä päivämäärä,
+# joka on siis muotoa 2011-11-11. Muutettava: otetaan syöte listana. Palautetaan aina kahden mittainen lista, 
+# joka osoittaa aikavälin, joka syötetään sql:lle. Yhden mittaisesta syötteestä generoidaan aina kahden
+# mittainen lista.
 
 def jasenna_paivays(pvm_ehdokas):
 	print "\n------------Tulostetta jasenna_paivays-funktiosta--------------------"
 	print pvm_ehdokas
-	# Etsitään pisteellä toisistaa erotettuja päiviä, kuukausia ja vuosia.
-	pvm = re.search("""
-			(^[12][0-9]{3}$) 						|	## Pelkkä vuosiluku						
-			(^(0?[1-9]|1[0-2])\.[12][0-9]{3}$) 				|	## Kuukausi ja vuosiluku
-			(^(0?[1-9]|[12][0-9])\.(0?[1-9]|[1][0-2])\.[12][0-9]{3}$)	|	## Kuukausi ja vuosi + 1. - 29. päivä
-			(^30\.(0?[13456789]|10|11|12)\.[12][0-9]{3}$)			|	## Mahdollisten kuukausien 30. päivä + kuukausi ja vuosi
-			(^31\.(0?[13578]|10|12)\.[12][0-9]{3})					## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi
-			""", pvm_ehdokas, re.X) 
-	# Etsitään ilman pisteitä syötettyjä päivämääriä.
-	if pvm == None and (len(pvm_ehdokas) == 8 or len(pvm_ehdokas) == 6):
+	ajankohdat = []
+	for ehdokas in pvm_ehdokas:
+		pvm_tarkkuus = []
+		# Etsitään pisteellä toisistaa erotettuja päiviä, kuukausia ja vuosia.
 		pvm = re.search("""
-				
-				(^(0?[1-9]|1[0-2])[12][0-9]{3}$)			|	## Kuukausi ja vuosiluku
-				(^(0?[1-9]|[12][0-9])(0?[1-9]|1[0-2])[12][0-9]{3}$)	|	## Kuukausi ja vuosi + 1. -29. päivä
-				(^30(0?[13456789]|10|11|12)[12][0-9]{3}$)		|	## Mahdollisten kuukausien 30. päivä + kuukausi ja vuosi
-				(^31(0?[13578]|10|12)[12][0-9]{3}$)				## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi
-				
-				""", pvm_ehdokas,re.X)
+				(^[0-9]{2}$)							|	## Pelkkä vuosiluku muodossa vv
+				(^(19|20)[0-9]{2}$) 						|	## Pelkkä vuosiluku muodossa vvvv
+				(^(0?[1-9]|1[0-2])\.[12][0-9]{3}$) 				|	## Kuukausi ja vuosiluku muodossa ....vvvv
+				(^(0?[1-9]|1[0-2])\.[0-9]{2}$)					|	## Kuukausi ja vuosiluku muodossa ....vv
+				(^(0?[1-9]|[12][0-9])\.(0?[1-9]|[1][0-2])\.[12][0-9]{3}$)	|	## Kuukausi ja vuosi + 1. - 29. päivä muodossa ....vvvv
+				(^(0?[1-9]|[12][0-9])\.(0?[1-9]|[1][0-2])\.[0-9]{2}$)		|	## Kuukausi ja vuosi + 1. - 29. päivä muodossa ....vv
+				(^30\.(0?[13456789]|10|11|12)\.[12][0-9]{3}$)			|	## Mahdollisten kuukausien 30. päivä + kuukausi ja vuosi muodossa ....vvvv
+				(^30\.(0?[13456789]|10|11|12)\.[0-9]{2}$)			|	## Mahdollisten kuukausien 30. päivä + kuukausi ja vuosi muodossa ....vv
+				(^31\.(0?[13578]|10|12)\.[12][0-9]{3})				|	## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi
+				(^31\.(0?[13578]|10|12)\.[0-9]{2})					## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi
+				""", pvm_ehdokas, re.X) 
+		# Etsitään ilman pisteitä syötettyjä päivämääriä.
+		if pvm == None and (len(pvm_ehdokas) == 8 or len(pvm_ehdokas) == 6):
+			pvm = re.search("""
+					(^(0[1-9]|1[0-2])[0-9]{2}$)				|	## Kuukausi ja vuosiluku kkvv
+					(^(0[1-9]|1[0-2])(19|20)[0-9]{2}$)			|	## Kuukausi ja vuosiluku kkvvvv
+					(^(0[1-9]|[12][0-9])(0[1-9]|1[0-2])[0-9]{2}$)		|	## Kuukausi ja vuosi + 1. -29. päivä: ppkkvv
+					(^30(0[13456789]|10|11|12)[0-9]{2}$)			|	## Mahdollisten kuukausien 30. päivä + kuukausi ja vuosi: ppkkvv
+					(^31(0[13578]|10|12)[0-9]{2}$)				|	## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi: ppkkvv
+					(^(0[1-9]|[12][0-9])(0[1-9]|1[0-2])[12][0-9]{3}$)	|	## Kuukausi ja vuosi + 1. -29. päivä: ppkkvvvv
+					(^30(0[13456789]|10|11|12)[12][0-9]{3}$)		|	## Mahdollisten kuukausien 30. päivä + kuukausi ja vuosi: ppkkvvvv
+					(^31(0[13578]|10|12)[12][0-9]{3}$)				## Mahdollisten kuukausien 31. päivä + kuukausi ja vuosi: ppkkvvvv
+					
+					""", pvm_ehdokas,re.X)
 
-	sql_pvm = []
-	# Muotoillaan päivämäärä sql:lle sopivaksi
-	if pvm != None:
-		apupaiva = pvm.group()
-		#sql_pvm = []
-		# Lisätään vuosiluku ensimmäiseksi lopullisen päivämäärän luovaan listaan.
-		sql_pvm.append(apupaiva[-4:])
-		sql_pvm.append('-')
-		if len(apupaiva) > 4:
-			d = re.findall("\d{1,2}" , apupaiva)
-			## Vuosiluku poistetaan listasta
-			d.pop()
-			d.pop()
-			d.reverse()
-			for kkpp in d:
-				if len(kkpp) == 2:
-					sql_pvm.append(kkpp)
+		sql_pvm = []
+		pvm_tarkkuus.append(sql_pvm)
+		# Muotoillaan päivämäärä sql:lle sopivaksi
+		if pvm != None:
+			# Päivämääräksi tulkittu numerosarja muutetaan stringiksi.
+			apupaiva = pvm.group()
+			# Täydennetään pisteellisten ja kahden mittaisten päivämäärien vuosiluvut 4:n mittaisiksi.
+			if len(apupaiva) == 2:
+				if int(apupaiva) == 30:
+					apupaiva = '19' + apupaiva
 				else:
-					sql_pvm.append('0' + kkpp)
+					apupaiva = '20' + apupaiva
+			elif apupaiva[-3] == '.':
+				if int(apupaiva[-2:]) > 30:
+					apupaiva = apupaiva[:-2] + '19' + apupaiva[-2:]
+				else:
+					apupaiva = apupaiva[:-2] + '20' + apupaiva[-2:]
+			
+			# Käsitellään pisteettömien päivämäärien vuosiluvut neljän mittaisiksi.
+			# Lisätään valmis vuosiluku ensimmäiseksi lopullisen päivämäärän luovaan listaan,
+			# jos päivämäärän neljä viimeistä merkkiä ovat kaikki vuosiluvun osia (1900-luvun tai 2000-luvun):
+			if apupaiva[-4:].startswith('19') or apupaiva[-4:].startswith('20'):
+				sql_pvm.append(apupaiva[-4:])
 				sql_pvm.append('-')
-			print d
-		sql_pvm.pop(-1)
-		print sql_pvm
-	#	paivays = ''.join(sql_pvm)
-	#	print paivays
-	
-	## Varmistetaan, ettei helmikuussa ole 29:ää päivää muulloin kuin karkausvuonna
-	if len(sql_pvm) == 5:
-		if sql_pvm[2] == '02' and sql_pvm[4] == '29':
-			if int(sql_pvm[0]) % 400 == 0:
-				print sql_pvm
-			elif int(sql_pvm[0]) % 100 == 0:
-				sql_pvm.pop(-1)
-				sql_pvm.pop(-1)
-				print sql_pvm
-			elif int(sql_pvm[0]) % 4 == 0:
-				print sql_pvm
+			# Jos eivät, tulkitaan, että neljänneksi ja kolmanneksi viimeiset kuuluvat kuukauteen. Vuosiluku täydennetään
+			# joko 20:lla tai 19:llä riippuen siitä, onko vuosiluku < 30. Jos on valitaan 20, jos ei valitaan 19.
+			elif int(apupaiva[-2:]) > 30:
+				apupaiva = apupaiva[:-2] + '19' + apupaiva[-2:]
+				sql_pvm.append(apupaiva[-4:])
+				sql_pvm.append('-')
 			else:
-				sql_pvm.pop(-1)
-				sql_pvm.pop(-1)
-				print sql_pvm
+				apupaiva = apupaiva[:-2] + '20' + apupaiva[-2:]
+				sql_pvm.append(apupaiva[-4:])
+				sql_pvm.append('-')
+
+			# Lisätään pisteettömiin päivämääriin pisteet:
+			if len(apupaiva) == 6 and '.' not in apupaiva:
+				apupaiva = apupaiva[:2] +  '.' + apupaiva[2:]
+			elif len(apupaiva) == 8 and '.' not in apupaiva:
+				apupaiva = apupaiva[:2] + '.' + apupaiva[2:4] + '.' + apupaiva[4:]
+			
+			print "-----------\n apupaiva sen jalkeen, kun on tulkittu pvm_ehdokkaan 4 viimeista\nnumeroa muotoon vvvv tai kkvv\t\t" + apupaiva
+
+			# Jos annetussa päivämääräehdokkaassa on enemmän kuin pelkkä vuosiluku:
+			if len(apupaiva) > 4:
+				# Etsi apupaivasta kaikki yhden ja kahden numeron mittaiset pätkät, ts. päivät ja kuukaudet
+				d = re.findall("\d{1,2}" , apupaiva)
+				## Vuosiluku poistetaan listasta
+				d.pop()
+				d.pop()
+				d.reverse()
+				for kkpp in d:
+					if len(kkpp) == 2:
+						sql_pvm.append(kkpp)
+					else:
+						sql_pvm.append('0' + kkpp)
+					sql_pvm.append('-')
+				print d 
+			sql_pvm.pop(-1)
+
+		#	paivays = ''.join(sql_pvm)
+		#	print paivays
+		
+		## Varmistetaan, ettei helmikuussa ole 29:ää päivää muulloin kuin karkausvuonna
+		if len(sql_pvm) == 5:
+			if sql_pvm[2] == '02' and sql_pvm[4] == '29':
+				if int(sql_pvm[0]) % 400 == 0:
+					print sql_pvm
+				elif int(sql_pvm[0]) % 100 == 0:
+					sql_pvm.pop(-1)
+					sql_pvm.pop(-1)
+					print sql_pvm
+				elif int(sql_pvm[0]) % 4 == 0:
+					print sql_pvm
+				else:
+					sql_pvm.pop(-1)
+					sql_pvm.pop(-1)
+					print sql_pvm
+		# Jos sql_pvm-listassa on 5 osaa, on kyseessä täydellinen päivämäärä, jos 3, kuukausi ja jos muu eli 1, vuosi.
+		if len(sql_pvm) == 5:
+			pvm_tarkkuus.append('pp')
+		elif len(sql_pvm) == 3:
+			pvm_tarkkuus.append('kk')
+		else:
+			pvm_tarkkuus.append('vv')
+		print sql_pvm
+		print pvm_tarkkuus
+		ajankohdat.append(sql_pvm)
 
 	print "\n"
 	return ''.join(sql_pvm)	
 		
-jasenna_paivays("2000")
+jasenna_paivays("29.02.02")
 
 class Lisaaja:   
 	# Funktio lisaa dataa ooppera-tauluun
