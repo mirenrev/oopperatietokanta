@@ -362,6 +362,10 @@ class Hakija:
 		print str(haunalku)	
 		if 'aaniala' not in haunalku and 'roolinimi' not in haunalku and 'esiintyja' in haunalku:
 			haunalku.remove('esiintyja')
+			haunalku.pop(-1)
+			for rajaus in self.rajaus_kentta:
+				if ''.join(rajaus.keys()) == 'esiintyja':
+					self.rajaus_kentta.remove(rajaus)
 
 		if haunalku[-1] == ',':
 			haunalku.pop(-1)
@@ -478,7 +482,7 @@ class Hakija:
 						taalta.append('\n\tinner join rse_kombinaatio ON \n\t\t(rooli.rooli_id = rse_kombinaatio.rooli_id) ')
 						taalta.append('\n\tinner join oopperaesitys  ON \n\t\t(oopperaesitys.esitys_id = rse_kombinaatio.esitys_id)' )
 					elif 'oopperaesitys' in kyselytaulut:
-						taalta.append('\n\tinner join rse_kombinaatio ON \n\t\t(ooppera_esitys.esitys_id = rse_kombinaatio.esitys_id) ')
+						taalta.append('\n\tinner join rse_kombinaatio ON \n\t\t(oopperaesitys.esitys_id = rse_kombinaatio.esitys_id) ')
 					elif 'rooli' in kyselytaulut:
 						taalta.append('\n\tinner join rse_kombinaatio ON \n\t\t(rooli.rooli_id = rse_kombinaatio.rooli_id)')
 				elif kyselytaulut[i] == 'henkilo':
@@ -507,6 +511,7 @@ class Hakija:
 		loppuosa = ['', '\n\tWHERE']
 		for item in self.rajaus_kentta:
 			if ''.join(item.get(''.join(item.keys()))) != '--':
+				print self.rajaus_kentta
 				valiaik.append(item)
 				## Hoidetaan mahdolliset useammat päivämäärät nousevaan suuruunjärjestykseen
 				if ''.join(item.keys()) == 'paivamaara':
@@ -586,7 +591,7 @@ class Hakija:
 								loppuosa.append('\n\t\t\t' + avain + " like '%" + ehdot[j] + "%'")
 								loppuosa.append('\n\t\t)\n')
 					## Käsitellään muut kenttä-ehto-parit 
-					elif i > 0: ##0 < i < (len(valiaik) - 1):
+					elif i > 0:
 						if len(ehdot) == 1:
 							if avain == 'esiintyja':
 								loppuosa.append('\t\tAND')
