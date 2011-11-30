@@ -216,10 +216,18 @@ class Lisaaja:
 		avain = yhteys.query("select currval('oop_id')").getresult()[0][0]
 		return avain
 
+	# Funktio lisää dataa ooppera-tauluun
 	def lisaa_oopperaan_rooli(self,yhteys,ooppera_id,roolinimi,aaniala,onko_esiintyja):
 		lisays = "insert into rooli values (DEFAULT,'" + ooppera_id + "','" + roolinimi + "','" + aaniala + "','" + onko_esiintyja + "')"
 		yhteys.query(lisays)
-		avain = yhteys.query("select currval('rool_id')")
+		avain = yhteys.query("select currval('rool_id')").getresult[0][0]
+		return avain
+	
+	# Funktio lisää dataa oopperaesitys-tauluun
+	def lisaa_oopperaan_esityspaiva(self,yhteys,ooppera_id,talo_id,paivamaara,festivaali):
+		lisays = "insert into oopperaesitys values (DEFAULT,'" + ooppera_id + "','" + talo_id  + "','" + paivamaara + "','" + festivaali + "')"
+		yhteys.query(lisays)
+		avain = yhteys.query("select currval('esitys_id')").getresult[0][0]
 		return avain
 
 class Hakija:
@@ -515,30 +523,12 @@ class Hakija:
 				valiaik.append(item)
 				## Hoidetaan mahdolliset useammat päivämäärät nousevaan suuruunjärjestykseen
 				if ''.join(item.keys()) == 'paivamaara':
-					# Tässä vaiheessa tiedetään, että avain on 'paivamaara'
+					# Tässä vaiheessa tiedetään, että avain on 'paivamaara'. Otetaan syötettyjen päivämäärien lista talteen 
+					# irralliseen listaan.
 					temp = item.get('paivamaara') 
+					# Vaihdetaan Dictionaryssä 'paivamaara'n valueksi jasenna_paivays-funktiolla käsitelty temp. 
+					# 'paivamaara'n valuen pitäisi nyt olla 2-alkioinen lista.
 					item['paivamaara'] = jasenna_paivays(temp)
-					"""	print temp
-					for i in range(len(temp)):
-						temp[i] = jasenna_paivays(temp[i])
-					# Tarkistetaan, ettei päivämääriä ole enempää kuin kaksi. Jos on, jätetään pienin ja suurin.
-					temp = sorted(temp)
-					
-					# Poistetaan epäkelvot päivämäärät:
-					for pvm in temp:
-						if pvm == '':
-							temp.remove(pvm)
-
-					if len(temp) > 2:
-						for i in range(len(temp)):
-							if i > 0 and i < (len(temp) - 1):
-								temp.pop(i)
-					print 'Tama on temp   ' + str(temp)
-					item['paivamaara'] = temp
-					# Poistetaan päivämäärä-kenttä, jos se on nyt tyhjä, ts. siinä ei ole enää kelpoja päivämääriä.
-					if item['paivamaara'] == []:
-					valiaik.remove(item)
-					"""
 
 		print 'rajaus_kentta:\n' + str(self.rajaus_kentta)
 		print 'valiaik\n' + str(valiaik)
@@ -646,23 +636,14 @@ class Hakija:
 
 @oop.route('/lisaa', method='GET')
 		
-def lisaa_kantaan():
+def lisaa_kantaan_ooppera():
 	if request.GET.get('save','').strip():
 		ooppera = request.GET.get('oopnimi','').strip()
 		print ooppera
 		saveltaja = request.GET.get('saveltaja','').strip()
-		paiva = request.GET.get('esityspaiva','').strip()
-		rooli1_nimi = request.GET.get('rooli1_nimi','').strip()
-		onko1_esiintyja = request.GET.get('onko1_esiintyja','').strip()
-		if onko1_esiintyja == 'on':
-			onko1_esiintyja = 'true'
-		else:
-			onko1_esiintyja = 'false'
-		rooli1_aaniala = request.GET.get('rooli1_aaniala','').strip()
         	yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		lis = Lisaaja()
 		oop_avain = str(lis.lisaa_ooppera(yhteys,ooppera,saveltaja))
-		rool_avain = str(lis.lisaa_oopperaan_rooli(yhteys,oop_avain,rooli1_nimi,rooli1_aaniala,onko1_esiintyja))
 		yhteys.close()
 		return "<p>Onnistui! %s</p>" % (oop_avain)
 	else:
