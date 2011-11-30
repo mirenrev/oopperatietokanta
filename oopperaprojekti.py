@@ -134,76 +134,81 @@ def jasenna_paivays(pvm_ehdokas):
 	print '\t\tNää on ajankohdat'
 	print len(ajankohdat)
 	print ajankohdat
-	print len(ajankohdat[0])
-	ajankohdat = sorted(ajankohdat)
-	len_ajankohdat = len(ajankohdat)
-	len_aja_nolla = len(ajankohdat[0])
 
-	# Otetaan ajankohdista talteen aikaisin ja viimeisin
-			
-	ajat = [ajankohdat[0], ajankohdat[-1]]
-	print str(ajat) + '          ajat'
-	# Täydennetään päivämäärät, joista puuttuu kuukausi tai vuosi
-	if len(ajat[0]) == 1:
-		ajat[0].append('-')
-		ajat[0].append('01')
-		ajat[0].append('-')
-		ajat[0].append('01')
-	elif len(ajat[0]) == 3:
-		ajat[0].append('-')
-		ajat[0].append('01')
+	if len(ajankohdat) > 0:
+		#print len(ajankohdat[0])
+		ajankohdat = sorted(ajankohdat)
+		len_ajankohdat = len(ajankohdat)
+		len_aja_nolla = len(ajankohdat[0])
 
-	if len(ajat[1]) == 1:
-		ajat[1].append('-')
-		ajat[1].append('12')
-		ajat[1].append('-')
-		ajat[1].append('31')
-	elif len(ajat[1]) == 3:
-		ajat[1].append('-')
-		# Lisätään kuun viimeinen päivä
-		if ajat[1][-2] == '02':
-			if int(ajat[1][0]) % 400 == 0:
-				ajat[1].append('29')
-			elif int(ajat[1][0]) % 100 == 0:
-				ajat[1].append('28')
-			elif int(ajat[1][0]) % 4 == 0:
-				ajat[1].append('29')
-			else:
-				ajat[1].append('28')
-		elif ajat[1][-2] in ['01','03','05','07','08','10','12']:
+		# Otetaan ajankohdista talteen aikaisin ja viimeisin
+				
+		ajat = [ajankohdat[0], ajankohdat[-1]]
+		print str(ajat) + '          ajat'
+		# Täydennetään päivämäärät, joista puuttuu kuukausi tai vuosi
+		if len(ajat[0]) == 1:
+			ajat[0].append('-')
+			ajat[0].append('01')
+			ajat[0].append('-')
+			ajat[0].append('01')
+		elif len(ajat[0]) == 3:
+			ajat[0].append('-')
+			ajat[0].append('01')
+
+		if len(ajat[1]) == 1:
+			ajat[1].append('-')
+			ajat[1].append('12')
+			ajat[1].append('-')
 			ajat[1].append('31')
-		else:
-			ajat[1].append('30')
-		
-	print len(ajankohdat)
-	if len_ajankohdat == 1:
-		if len_aja_nolla == 1:
-			ajat[1] = ajat[0][:]
-			ajat[1][-1] = '31'
-			ajat[1][-3] = '12'
-		if len_aja_nolla == 3:
-			ajat[1] = ajat[0][:]
-			if ajat[1][-3] == '02':
+		elif len(ajat[1]) == 3:
+			ajat[1].append('-')
+			# Lisätään kuun viimeinen päivä
+			if ajat[1][-2] == '02':
 				if int(ajat[1][0]) % 400 == 0:
-					ajat[1][-1] = '29'
+					ajat[1].append('29')
 				elif int(ajat[1][0]) % 100 == 0:
-					ajat[1][-1] = '28'
+					ajat[1].append('28')
 				elif int(ajat[1][0]) % 4 == 0:
-					ajat[1][-1] = '29'
+					ajat[1].append('29')
 				else:
-					ajat[1][-1] = '28'
-			elif ajat[1][-3] in ['01','03','05','07','08','10','12']:
-				ajat[1][-1] = '31'
+					ajat[1].append('28')
+			elif ajat[1][-2] in ['01','03','05','07','08','10','12']:
+				ajat[1].append('31')
 			else:
-				ajat[1][-1] = '30'
+				ajat[1].append('30')
 			
-	print ajat
-	print "\n"
-	palaute = []
-	palaute.append(''.join(ajat[0]))
-	palaute.append(''.join(ajat[1]))
-	print palaute
-	return palaute
+		print len(ajankohdat)
+		if len_ajankohdat == 1:
+			if len_aja_nolla == 1:
+				ajat[1] = ajat[0][:]
+				ajat[1][-1] = '31'
+				ajat[1][-3] = '12'
+			if len_aja_nolla == 3:
+				ajat[1] = ajat[0][:]
+				if ajat[1][-3] == '02':
+					if int(ajat[1][0]) % 400 == 0:
+						ajat[1][-1] = '29'
+					elif int(ajat[1][0]) % 100 == 0:
+						ajat[1][-1] = '28'
+					elif int(ajat[1][0]) % 4 == 0:
+						ajat[1][-1] = '29'
+					else:
+						ajat[1][-1] = '28'
+				elif ajat[1][-3] in ['01','03','05','07','08','10','12']:
+					ajat[1][-1] = '31'
+				else:
+					ajat[1][-1] = '30'
+				
+		print ajat
+		print "\n"
+		palaute = []
+		palaute.append(''.join(ajat[0]))
+		palaute.append(''.join(ajat[1]))
+		print palaute
+		return palaute
+
+	else:
+		return []
 		
 list = ['021997','2007','2011']
 jasenna_paivays(list)
@@ -520,15 +525,19 @@ class Hakija:
 		for item in self.rajaus_kentta:
 			if ''.join(item.get(''.join(item.keys()))) != '--':
 				print self.rajaus_kentta
-				valiaik.append(item)
+				if ''.join(item.keys()) != 'paivamaara': 
+					valiaik.append(item)
 				## Hoidetaan mahdolliset useammat päivämäärät nousevaan suuruunjärjestykseen
-				if ''.join(item.keys()) == 'paivamaara':
+				else: # ''.join(item.keys()) == 'paivamaara':
 					# Tässä vaiheessa tiedetään, että avain on 'paivamaara'. Otetaan syötettyjen päivämäärien lista talteen 
 					# irralliseen listaan.
 					temp = item.get('paivamaara') 
 					# Vaihdetaan Dictionaryssä 'paivamaara'n valueksi jasenna_paivays-funktiolla käsitelty temp. 
 					# 'paivamaara'n valuen pitäisi nyt olla 2-alkioinen lista.
 					item['paivamaara'] = jasenna_paivays(temp)
+					if item['paivamaara'] != []:
+						valiaik.append(item)
+
 
 		print 'rajaus_kentta:\n' + str(self.rajaus_kentta)
 		print 'valiaik\n' + str(valiaik)
