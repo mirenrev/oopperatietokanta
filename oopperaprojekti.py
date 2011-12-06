@@ -641,10 +641,9 @@ class Hakija:
 
 
 
-# Alustava funktio kaiken mahdollisen tiedon lisaamiseen tietokantaan
+# Tämän funktion avulla lisätään tietokantaan uusi ooppera.
 
-@oop.route('/lisaa', method='GET')
-		
+@oop.route('/lisaa_ooppera', method='GET')
 def lisaa_kantaan_ooppera():
 	if request.GET.get('save','').strip():
 		ooppera = request.GET.get('oopnimi','').strip()
@@ -657,8 +656,17 @@ def lisaa_kantaan_ooppera():
 		return "<p>Onnistui! %s</p>" % (oop_avain)
 	else:
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
-		oopperat = yhteys.query("select saveltaja, oopnimi from ooppera").getresult()
-		return template('lisaa.tpl', rivit = oopperat)
+		oopperat = yhteys.query("select saveltaja, oopnimi, ooppera_id from ooppera order by oopnimi").getresult()
+		return template('lisaa_ooppera.tpl', rivit = oopperat)
+
+# Tämän funktion avulla lisätään oopperaan rooleja.
+@oop.route('/lisaa_rooleja',method='GET')
+def lisaa_kantaan_rooleja():
+	if request.GET.get('save','').strip():
+		print
+	else:
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+
 
 # Liitetaan oop-sovellukseen hakusivu.
 
