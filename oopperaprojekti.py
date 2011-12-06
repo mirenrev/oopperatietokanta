@@ -656,7 +656,9 @@ def lisaa_kantaan_ooppera():
 		yhteys.close()
 		return "<p>Onnistui! %s</p>" % (oop_avain)
 	else:
-		return template('lisaa.tpl')
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		oopperat = yhteys.query("select saveltaja, oopnimi from ooppera").getresult()
+		return template('lisaa.tpl', rivit = oopperat)
 
 # Liitetaan oop-sovellukseen hakusivu.
 

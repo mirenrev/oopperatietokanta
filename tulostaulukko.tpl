@@ -8,7 +8,7 @@
 
 <body>
 %# Malli tulostaulukon luontiin
-<p>Hakutulokset</p>
+<h3>Hakutulokset</h3>
 
 
 %for i in range(len(rivit[0])):
