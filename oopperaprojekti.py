@@ -3,6 +3,7 @@ import pg
 import re
 from bottle import Bottle, route, run, debug, template, request
 
+print "Kokeillaan!"
 oop = Bottle()
 
 # Funktio yhdistaa tietokantaan
