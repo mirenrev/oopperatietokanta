@@ -222,7 +222,7 @@ class Lisaaja:
 		avain = yhteys.query("select currval('oop_id')").getresult()[0][0]
 		return avain
 
-	# Funktio lisää dataa ooppera-tauluun
+	# Funktio lisää dataa rooli-tauluun
 	def lisaa_oopperaan_rooli(self,yhteys,ooppera_id,roolinimi,aaniala,onko_esiintyja):
 		lisays = "insert into rooli values (DEFAULT,'" + ooppera_id + "','" + roolinimi + "','" + aaniala + "','" + onko_esiintyja + "')"
 		yhteys.query(lisays)
@@ -258,7 +258,8 @@ class Hakija:
 			if type(self.hakukrit[0]) == type({}):
 				for item in self.hakukrit:
 					for sana in item.keys():
-						self.rajaus_kentta.append({sana : item.get(sana).split()})
+						if type(item[sana]) != type(None):
+							self.rajaus_kentta.append({sana : item.get(sana).split()})
 		print str(self.rajaus_kentta) + 'jee'
 
 	def haelopputulos(self):
@@ -653,8 +654,37 @@ def lisaa_kantaan_ooppera():
         	yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		lis = Lisaaja()
 		oop_avain = str(lis.lisaa_ooppera(yhteys,ooppera,saveltaja))
+		
+		# Lisätää roolit, jos sellaisia on syötetty:
+		for i in range(1,22):
+			rooli = 'rooli' + str(i)
+			aaniala = 'aani' + str(i)
+			esiintyja = 'es' + str(i)
+
+			r = request.GET.get(rooli,'').strip()
+			a = request.GET.get(aaniala,'').strip()
+			e = request.GET.get(esiintyja,'').strip()
+			if e == 'checked':
+				e = 't'
+			else:
+				e = 'f'
+
+			if r == '' and a == '':
+				continue
+			else:
+				lis.lisaa_oopperaan_rooli(yhteys,oop_avain,r,a,e)
+
 		yhteys.close()
 		return "<p>Onnistui! %s</p>" % (oop_avain)
+	elif request.GET.get('Rooleihin','').strip():
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		ooppera = request.GET.get('ooppera','').strip()
+		print "Tää on ooppera" + ooppera
+		haku = yhteys.query("select oopnimi,saveltaja,roolinimi,aaniala from ooppera inner join rooli on (ooppera.ooppera_id = rooli.ooppera_id) where ooppera.ooppera_id = " + ooppera).dictresult()
+		print haku
+		roolit = Hakija(yhteys,haku)
+		roolit.muotoile_tulos(haku)
+		return template('lisaa_rooleja.tpl', rivit = roolit.haelopputulos())
 	else:
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		oopperat = yhteys.query("select saveltaja, oopnimi, ooppera_id from ooppera order by oopnimi").getresult()
