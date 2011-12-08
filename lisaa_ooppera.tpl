@@ -49,7 +49,7 @@
 						<input type = "text" size = "40" maxlength ="40" name = "aani1" value = ""/>
 						<br/>
 						<label style="font:caption" for="es1">Onko kyseessä esiintyjä?</label>
-						<input type="checkbox" checked="checked" name="es1" />
+						<input type="checkbox" checked="checked" value="on" name="es1" />
 						<br/>
 						<hr />
 						<label style="font:caption" for="rooli2">Roolin nimi tai muu tehtävä:</label>

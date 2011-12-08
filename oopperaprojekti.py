@@ -226,7 +226,7 @@ class Lisaaja:
 	def lisaa_oopperaan_rooli(self,yhteys,ooppera_id,roolinimi,aaniala,onko_esiintyja):
 		lisays = "insert into rooli values (DEFAULT,'" + ooppera_id + "','" + roolinimi + "','" + aaniala + "','" + onko_esiintyja + "')"
 		yhteys.query(lisays)
-		avain = yhteys.query("select currval('rool_id')").getresult[0][0]
+		avain = yhteys.query("select currval('rool_id')")#.getresult[0][0]
 		return avain
 	
 	# Funktio lisää dataa oopperaesitys-tauluun
@@ -664,7 +664,7 @@ def lisaa_kantaan_ooppera():
 			r = request.GET.get(rooli,'').strip()
 			a = request.GET.get(aaniala,'').strip()
 			e = request.GET.get(esiintyja,'').strip()
-			if e == 'checked':
+			if e == 'on':
 				e = 't'
 			else:
 				e = 'f'
