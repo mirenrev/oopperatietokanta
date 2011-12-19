@@ -258,8 +258,9 @@ class Hakija:
 			if type(self.hakukrit[0]) == type({}):
 				for item in self.hakukrit:
 					for sana in item.keys():
-						if type(item[sana]) != type(None):
-							self.rajaus_kentta.append({sana : item.get(sana).split()})
+						if type(item[sana]) == type(None):
+							item[sana] = '--'
+						self.rajaus_kentta.append({sana : item.get(sana).split()})
 		print str(self.rajaus_kentta) + 'jee'
 
 	def haelopputulos(self):
@@ -653,7 +654,10 @@ def lisaa_kantaan_ooppera():
 		saveltaja = request.GET.get('saveltaja','').strip()
         	yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		lis = Lisaaja()
-		oop_avain = str(lis.lisaa_ooppera(yhteys,ooppera,saveltaja))
+		if ooppera != '':
+			oop_avain = str(lis.lisaa_ooppera(yhteys,ooppera,saveltaja))
+		else:
+			oop_avain = request.GET.get('ooppera_id','')
 		
 		# Lisätää roolit, jos sellaisia on syötetty:
 		for i in range(1,22):
@@ -684,7 +688,7 @@ def lisaa_kantaan_ooppera():
 		print haku
 		roolit = Hakija(yhteys,haku)
 		roolit.muotoile_tulos(haku)
-		return template('lisaa_rooleja.tpl', rivit = roolit.haelopputulos())
+		return template('lisaa_rooleja.tpl', rivit = roolit.haelopputulos(), ooppera_id = ooppera)
 	else:
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		oopperat = yhteys.query("select saveltaja, oopnimi, ooppera_id from ooppera order by oopnimi").getresult()

@@ -19,7 +19,7 @@
 				</td>
 				<td width="40%" bgcolor="#cccccc" height="100%" align="center">
 					<form action="/lisaa_ooppera" method="GET">
-						<label for="ooppera_id"><h6>Valitse olemassa oleva ooppera tästä.<br />Siirry lisäämään tekijöitä.</h6></label>	
+						<label for="ooppera_id"><h6>Valitse olemassa oleva ooppera tästä.<br />Siirry lisäämään rooleja.</h6></label>	
 						<select name="ooppera" id="ooppera_id" accesskey="">
 							<option value="-1" selected="selected">Valitse:</option>	
 							%for item in rivit:	
@@ -31,7 +31,7 @@
 					</form>
 					<h6>Lisää tähän uusi ooppera ja siihen roolit ja taustahenkilöt.</h6>
 					<form action="/lisaa_ooppera" method="GET">
-						<label style="font:caption" for"oopnimi">Oopperan nimi:</label>
+						<label style="font:caption" for = "oopnimi">Oopperan nimi:</label>
 						<br />
 						<input type = "text" size="40" maxlength="40" name="oopnimi" value = ""/>
 						<br/>
