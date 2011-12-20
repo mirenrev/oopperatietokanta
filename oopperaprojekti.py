@@ -225,25 +225,25 @@ class Lisaaja:
 	def lisaa_oopperaan_rooli(self,yhteys,ooppera_id,roolinimi,aaniala,onko_esiintyja):
 		lisays = "insert into rooli values (DEFAULT,'" + ooppera_id + "','" + roolinimi + "','" + aaniala + "','" + onko_esiintyja + "')"
 		yhteys.query(lisays)
-		avain = yhteys.query("select currval('rool_id')").getresult[0][0]
+		avain = yhteys.query("select currval('rool_id')").getresult()[0][0]
 		return avain
 	
 	# Funktio lisää dataa oopperaesitys-tauluun
 	def lisaa_oopperaan_esityspaiva(self,yhteys,ooppera_id,talo_id,paivamaara,festivaali):
 		lisays = "insert into oopperaesitys values (DEFAULT,'" + ooppera_id + "','" + talo_id  + "','" + paivamaara + "','" + festivaali + "')"
 		yhteys.query(lisays)
-		avain = yhteys.query("select currval('esitys_id')").getresult[0][0]
+		avain = yhteys.query("select currval('esitys_id')").getresult()[0][0]
 		return avain
 
 	# Funktio lisää dataa henkilö-tauluun
 	def lisaa_kantaan_henkilo(self,yhteys,etunimi,sukunimi,aaniala):
 		lisays = "insert into henkilo values (DEFAULT,'" + etunimi + "','" + sukunimi + "','" + aaniala + "')"
 		yhteys.query(lisays)
-		avain = yhteys.query("select currval('henk_id')").getresult[0][0]
+		avain = yhteys.query("select currval('henk_id')").getresult()[0][0]
 		return avain
 	
 	# Funktio lisää dataa oopperatalo-tauluun
-	def lisaa_kantaan_oopperatalo(self,ooptalonnimi,ooptalonsijainti)
+	def lisaa_kantaan_oopperatalo(self,ooptalonnimi,ooptalonsijainti):
 		lisays = "insert into oopperatalo values(DEFAULT,'" + ooptalonnimi + "','" + ooptalonsijainti + "')"
 		yhteys.query(lisays)
 		avain = yhteys.query("select currval (tal_id)").getresult()[0][0]
@@ -690,7 +690,7 @@ def lisaa_kantaan_ooppera():
 			oop_avain = request.GET.get('ooppera_id','')
 		
 		# Lisätää roolit, jos sellaisia on syötetty:
-		for i in range(1,22):
+		for i in range(1,23):
 			rooli = 'rooli' + str(i)
 			aaniala = 'aani' + str(i)
 			esiintyja = 'es' + str(i)
@@ -728,18 +728,42 @@ def lisaa_kantaan_ooppera():
 @oop.route('/lisaa_henkiloita',method='GET')
 def lisaa_kantaan_henkiloita():
 	if request.GET.get('save','').strip():
-		etunimi = request.GET.get('etunimi','').strip()
-		sukunimi = request.GET.get('sukunimi','').strip()
-		ammatti = request.GET.get('ammatti','').strip()
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		lis = Lisaaja()
-		lis.lisaa_kantaan_henkilo(yhteys,etunimi,sukunimi,ammatti)
+		for i in range(1,23):
+			etunimi = 'etunimi' + str(i)
+			sukunimi = 'sukunimi' + str(i)
+			ammatti = 'ammatti' + str(i)
+
+			e = request.GET.get(etunimi,'').strip()
+			s = request.GET.get(sukunimi,'').strip()
+			a = request.GET.get(ammatti,'').strip()
+			if e != '' and s != '' and a != '':
+				lis.lisaa_kantaan_henkilo(yhteys,e,s,a)
+		yhteys.close()
+		return template('tarkhaku.tpl')
 	else:
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
-		henkilot = yhteys.query("select henkilo_id,sukunimi,etunimi,ammatti from henkilo")
-		return template('lisaa_henkilo.tpl', rivit = henkilot)
+		henkilot = yhteys.query("select henkilo_id,sukunimi,etunimi,ammatti from henkilo order by sukunimi").getresult()
+		return template('lisaa_henkiloita.tpl', rivit = henkilot)
 
+# Tämän funktion avulla lisätään kantaan esiintymispaikkoja
+@oop.route('/lisaa_oopperatalo',method='GET')
+def lisaa_kantaan_oopperatalo():
+	if request.GET.get('save','').strip():
+		yhteys.yhdista('oopperatietokanta','localhost','verneri','kissa')
+		lis = Lisaaja()
+		for i in range(1,6):
+			ooptalonnimi = 'ooptalonnimi' + str(i)
+			ooptalonsijainti = 'ooptalonsijainti' + str(i)
 
+			oopn = request.GET.get(ooptalonnimi,'').strip()
+			oops = request.GET.get(ooptalonsijainti,'').strip()
+
+			if oopn != '' and oops != '':
+				lis.lisaa_kantaan_oopperatalo(yhteys,oopn,oops)
+		yhteys.close()
+		return template('tarkhaku.tpl')
 # Liitetaan oop-sovellukseen hakusivu.
 
 @oop.route('/pikahaku',method = 'GET')
