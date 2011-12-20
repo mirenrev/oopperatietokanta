@@ -3,7 +3,6 @@ import pg
 import re
 from bottle import Bottle, route, run, debug, template, request
 
-print "Kokeillaan!"
 oop = Bottle()
 
 # Funktio yhdistaa tietokantaan
@@ -17,7 +16,7 @@ def db_yhteys(tietokanta,isanta,kayttaja,salasana):
 	return con
 
 # Funktion on tarkoitus palauttaa sopivasta syötteestä muokattu sql:lle ymmärrettävä päivämäärä,
-# joka on siis muotoa 2011-11-11. Muutettava: otetaan syöte listana. Palautetaan aina kahden mittainen lista, 
+# joka on siis muotoa 2011-11-11. Palauttaa aina kahden mittaisen listan, 
 # joka osoittaa aikavälin, joka syötetään sql:lle. Yhden mittaisesta syötteestä generoidaan aina kahden
 # mittainen lista.
 
@@ -211,8 +210,8 @@ def jasenna_paivays(pvm_ehdokas):
 	else:
 		return []
 		
-list = ['021997','2007','2011']
-jasenna_paivays(list)
+#list = ['021997','2007','2011']
+#jasenna_paivays(list)
 
 class Lisaaja:   
 	# Funktio lisaa dataa ooppera-tauluun
@@ -226,7 +225,7 @@ class Lisaaja:
 	def lisaa_oopperaan_rooli(self,yhteys,ooppera_id,roolinimi,aaniala,onko_esiintyja):
 		lisays = "insert into rooli values (DEFAULT,'" + ooppera_id + "','" + roolinimi + "','" + aaniala + "','" + onko_esiintyja + "')"
 		yhteys.query(lisays)
-		avain = yhteys.query("select currval('rool_id')")#.getresult[0][0]
+		avain = yhteys.query("select currval('rool_id')").getresult[0][0]
 		return avain
 	
 	# Funktio lisää dataa oopperaesitys-tauluun
@@ -235,6 +234,37 @@ class Lisaaja:
 		yhteys.query(lisays)
 		avain = yhteys.query("select currval('esitys_id')").getresult[0][0]
 		return avain
+
+	# Funktio lisää dataa henkilö-tauluun
+	def lisaa_kantaan_henkilo(self,yhteys,etunimi,sukunimi,aaniala):
+		lisays = "insert into henkilo values (DEFAULT,'" + etunimi + "','" + sukunimi + "','" + aaniala + "')"
+		yhteys.query(lisays)
+		avain = yhteys.query("select currval('henk_id')").getresult[0][0]
+		return avain
+	
+	# Funktio lisää dataa oopperatalo-tauluun
+	def lisaa_kantaan_oopperatalo(self,ooptalonnimi,ooptalonsijainti)
+		lisays = "insert into oopperatalo values(DEFAULT,'" + ooptalonnimi + "','" + ooptalonsijainti + "')"
+		yhteys.query(lisays)
+		avain = yhteys.query("select currval (tal_id)").getresult()[0][0]
+		return avain
+
+	# Funktio lisää dataa ryhma-tauluun
+	def lisaa_kantaan_ryhma(self,ryhmannimi, ryhmantehtava):
+		lisays = "insert into ryhma values(DEFAULT,'" + ryhmannimi + "','" + ryhmantehtava + "')"
+		yhteys.query(lisays)
+		avain = yhteys.query("select currval (ryhm_id)").getresult()[0][0]
+		return avain
+
+	# Funktio yhdistää tietokannassa olevan esityksen ja ryhman toisiinsa
+	def yhdista_ryhma_esitys(self,ryhma_id,esitys_id):
+		lisays = "insert into ryhma_esitys_kombinaatio values('" + ryhma_id + "','" + esitys_id + "')"
+		yhteys.query(lisays)
+	
+	# Funktio yhdistää tietokannassa olevan roolin, esityksen ja henkilön toisiinsa
+	def yhdista_rooli_henkilo_esitys(self,henkilo_id,rooli_id,esitys_id):
+		lisays = "insert into rse_kombinaatio values('" + henkilo_id + "','" + rooli_id + "','" + esitys_id + "')"
+		yhteys.query(lisays)
 
 class Hakija:
 	## Nettisivulla toistettavan taulukon eri osiin kirjattavat tietokannan sarakkeet
@@ -694,13 +724,20 @@ def lisaa_kantaan_ooppera():
 		oopperat = yhteys.query("select saveltaja, oopnimi, ooppera_id from ooppera order by oopnimi").getresult()
 		return template('lisaa_ooppera.tpl', rivit = oopperat)
 
-# Tämän funktion avulla lisätään oopperaan rooleja.
-@oop.route('/lisaa_rooleja',method='GET')
-def lisaa_kantaan_rooleja():
+# Tämän funktion avulla lisätään tietokantaan henkilö.
+@oop.route('/lisaa_henkiloita',method='GET')
+def lisaa_kantaan_henkiloita():
 	if request.GET.get('save','').strip():
-		print
+		etunimi = request.GET.get('etunimi','').strip()
+		sukunimi = request.GET.get('sukunimi','').strip()
+		ammatti = request.GET.get('ammatti','').strip()
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		lis = Lisaaja()
+		lis.lisaa_kantaan_henkilo(yhteys,etunimi,sukunimi,ammatti)
 	else:
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		henkilot = yhteys.query("select henkilo_id,sukunimi,etunimi,ammatti from henkilo")
+		return template('lisaa_henkilo.tpl', rivit = henkilot)
 
 
 # Liitetaan oop-sovellukseen hakusivu.
