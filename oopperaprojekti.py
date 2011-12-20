@@ -227,6 +227,13 @@ class Lisaaja:
 		yhteys.query(lisays)
 		avain = yhteys.query("select currval('rool_id')").getresult()[0][0]
 		return avain
+
+	# Funktio lisää dataa oopperaesitys-tauluun
+	def lisaa_esitys(self,yhteys,talo_id,ooppera_id,paivamaara,festivaali):
+		lisays = "insert into oopperaesitys values (DEFAULT,'" + ooppera_id + "','" + talo_id + "','" + paivamaara + "','" + festivaali + "')"
+		yhteys.query(lisays)
+		avain = yhteys.query("select currval('es_id')").getresult()[0][0]
+		return avain
 	
 	# Funktio lisää dataa oopperaesitys-tauluun
 	def lisaa_oopperaan_esityspaiva(self,yhteys,ooppera_id,talo_id,paivamaara,festivaali):
@@ -243,26 +250,26 @@ class Lisaaja:
 		return avain
 	
 	# Funktio lisää dataa oopperatalo-tauluun
-	def lisaa_kantaan_oopperatalo(self,ooptalonnimi,ooptalonsijainti):
+	def lisaa_kantaan_oopperatalo(self,yhteys,ooptalonnimi,ooptalonsijainti):
 		lisays = "insert into oopperatalo values(DEFAULT,'" + ooptalonnimi + "','" + ooptalonsijainti + "')"
 		yhteys.query(lisays)
-		avain = yhteys.query("select currval (tal_id)").getresult()[0][0]
+		avain = yhteys.query("select currval ('tal_id')").getresult()[0][0]
 		return avain
 
 	# Funktio lisää dataa ryhma-tauluun
-	def lisaa_kantaan_ryhma(self,ryhmannimi, ryhmantehtava):
+	def lisaa_kantaan_ryhma(self,yhteys,ryhmannimi, ryhmantehtava):
 		lisays = "insert into ryhma values(DEFAULT,'" + ryhmannimi + "','" + ryhmantehtava + "')"
 		yhteys.query(lisays)
-		avain = yhteys.query("select currval (ryhm_id)").getresult()[0][0]
+		avain = yhteys.query("select currval ('ryhm_id')").getresult()[0][0]
 		return avain
 
 	# Funktio yhdistää tietokannassa olevan esityksen ja ryhman toisiinsa
-	def yhdista_ryhma_esitys(self,ryhma_id,esitys_id):
+	def yhdista_ryhma_esitys(self,yhteys,ryhma_id,esitys_id):
 		lisays = "insert into ryhma_esitys_kombinaatio values('" + ryhma_id + "','" + esitys_id + "')"
 		yhteys.query(lisays)
 	
 	# Funktio yhdistää tietokannassa olevan roolin, esityksen ja henkilön toisiinsa
-	def yhdista_rooli_henkilo_esitys(self,henkilo_id,rooli_id,esitys_id):
+	def yhdista_rooli_henkilo_esitys(self,yhteys,henkilo_id,rooli_id,esitys_id):
 		lisays = "insert into rse_kombinaatio values('" + henkilo_id + "','" + rooli_id + "','" + esitys_id + "')"
 		yhteys.query(lisays)
 
@@ -709,7 +716,7 @@ def lisaa_kantaan_ooppera():
 				lis.lisaa_oopperaan_rooli(yhteys,oop_avain,r,a,e)
 
 		yhteys.close()
-		return "<p>Onnistui! %s</p>" % (oop_avain)
+		return template('tarkhaku.tpl')
 	elif request.GET.get('Rooleihin','').strip():
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		ooppera = request.GET.get('ooppera','').strip()
@@ -722,6 +729,7 @@ def lisaa_kantaan_ooppera():
 	else:
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		oopperat = yhteys.query("select saveltaja, oopnimi, ooppera_id from ooppera order by oopnimi").getresult()
+		yhteys.close()
 		return template('lisaa_ooppera.tpl', rivit = oopperat)
 
 # Tämän funktion avulla lisätään tietokantaan henkilö.
@@ -745,13 +753,14 @@ def lisaa_kantaan_henkiloita():
 	else:
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		henkilot = yhteys.query("select henkilo_id,sukunimi,etunimi,ammatti from henkilo order by sukunimi").getresult()
+		yhteys.close()
 		return template('lisaa_henkiloita.tpl', rivit = henkilot)
 
 # Tämän funktion avulla lisätään kantaan esiintymispaikkoja
-@oop.route('/lisaa_oopperatalo',method='GET')
+@oop.route('/lisaa_oopperataloja',method='GET')
 def lisaa_kantaan_oopperatalo():
 	if request.GET.get('save','').strip():
-		yhteys.yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		lis = Lisaaja()
 		for i in range(1,6):
 			ooptalonnimi = 'ooptalonnimi' + str(i)
@@ -764,6 +773,67 @@ def lisaa_kantaan_oopperatalo():
 				lis.lisaa_kantaan_oopperatalo(yhteys,oopn,oops)
 		yhteys.close()
 		return template('tarkhaku.tpl')
+	else:
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		ooptalot = yhteys.query("select talo_id,ooptalonnimi,ooptalonsijainti from oopperatalo order by ooptalonnimi").getresult()
+		yhteys.close
+		return template('lisaa_oopperataloja.tpl', rivit=ooptalot)
+
+# Funktion avulla liitetään esityspäivä esiintymispaikkaan ja oopperaan
+@oop.route('/lisaa_espaiva',method='GET')
+def liita_paikkaan_paiva_ooppera():
+	if request.GET.get('save','').strip():
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		lis = Lisaaja()
+		paivamaara = request.GET.get('paivamaara','').strip()
+		paivays = [paivamaara]
+		paivays = jasenna_paivays(paivays)
+		if len(paivays) == 2:
+			paivays = paivays[0]
+		else:
+			return template('tarkhaku.tpl')
+		print paivays + '3'
+		festivaali = request.GET.get('festivaali','').strip()
+		ooppera = request.GET.get('ooppera_id','').strip()
+		if ooppera == '':
+			return template('tarkhaku.tpl')
+		talo_id = request.GET.get('talo_id','').strip()
+		if talo_id == '':
+			return template('tarkhaku.tpl')
+		
+		lis.lisaa_esitys(yhteys,talo_id,ooppera,paivays,festivaali)
+		yhteys.close()
+		return template('tarkhaku.tpl')
+	else:
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		talot = yhteys.query('select talo_id,ooptalonnimi,ooptalonsijainti from oopperatalo order by ooptalonnimi').getresult()
+		oopperat = yhteys.query('select ooppera_id,oopnimi,saveltaja from ooppera order by oopnimi').getresult()
+		return template('lisaa_espaiva.tpl', ooptalot=talot, ooplista=oopperat)
+
+
+# Tämän funktion avulla lisätään kantaan esiintyjäryhmiä
+@oop.route('lisaa_ryhmia', method='GET')
+def lisaa_kantaan_ryhma():
+	if request.GET.get('save','').strip():
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		lis = Lisaaja()
+		for i in range(1,6):
+			ryhmannimi = 'ryhmannimi' + str(i)
+			ryhmantehtava = 'ryhmantehtava' + str(i)
+
+			rn = request.GET.get(ryhmannimi,'').strip()
+			rt = request.GET.get(ryhmantehtava,'').strip()
+
+			if rn != '' and rt != '':
+				lis.lisaa_kantaan_ryhma(yhteys,rn,rt)
+		yhteys.close()
+		return template('tarkhaku.tpl')
+	else:
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		ryhmat = yhteys.query('select ryhma_id,ryhmannimi,ryhmantehtava from ryhma order by ryhmannimi').getresult()
+		yhteys.close()
+		return template('lisaa_ryhmia.tpl', rivit=ryhmat)
+
 # Liitetaan oop-sovellukseen hakusivu.
 
 @oop.route('/pikahaku',method = 'GET')
