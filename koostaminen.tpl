@@ -3,7 +3,8 @@
 	</head>
 
 	<body bgcolor="#eeeeee">
-		<form action="koosta_esitys" method="GET">
+		<p>Navigointi: <a href="/pikahaku">Pikahakuun</a> <a href="/tarkhaku">Tarkennettuun hakuun</a> <a href="/lisaa_ooppera">Siirry lisäämään ooppera</a> <a href="/lisaa_henkiloita">Siirry lisäämään henkilöitä</a> <a href="/lisaa_oopperataloja">Siirry lisäämään oopperataloja</a> <a href="/lisaa_espaiva">Lisää esityspäivä</a> <a href="/lisaa_ryhmia">Lisää ryhmiä</a> <a href="/koosta_esitys">Koosta annetuista tiedoista esitys</a></p>
+		<form action="/koosta_esitys" method="GET">
 		<h3 align="center">Lisää esitykseen esittäjiä, taustahenkilöitä ja ryhmiä</h3>
 		<p align="center">Kaikki sivun tiedot lähetevät, kun mitä tahansa save-nappuloista painetaan.</p>
 		<table width="100%" height="100%" cellspacing="0" cellpadding="10">

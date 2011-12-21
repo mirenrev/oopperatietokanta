@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import pg
 import re
-from bottle import Bottle, route, run, debug, template, request
+from bottle import Bottle, route, run, debug, template, request, response, static_file
 
 oop = Bottle()
 
@@ -273,7 +273,10 @@ class Lisaaja:
 		lisays = "insert into rse_kombinaatio values('" + rooli_id + "','" + esitys_id + "','" + henkilo_id + "')"
 		yhteys.query(lisays)
 
+	
+
 class Hakija:
+
 	## Nettisivulla toistettavan taulukon eri osiin kirjattavat tietokannan sarakkeet
 	ots_sar = ['paivamaara','saveltaja','oopnimi','ooptalonnimi','festivaali','ooptalonsijainti']
 	ryhma_sar = ['ryhmannimi','ryhmantehtava']
@@ -678,7 +681,20 @@ class Hakija:
 		tulos = self.yhteys.query(haunalku + from_osa + where_osa).dictresult()
 		print tulos
 		self.muotoile_tulos(tulos)
+		return tulos
 
+class Muokkaaja(Hakija):
+	# Funktiolla voidaan muokata jonkin taulun rivejä. Palauttaa 1, jos onnistui, 0 jos ei.
+	def muokkaa_taulun_rivin_kenttaa(self,yhteys,taulu,rivi_idn_nimi,rivi_id,kentta,uusi_arvo):
+		muokkaus = "update %s set %s ='%s' where %s ='%s'" % (taulu,kentta,uusi_arvo,rivi_idn_nimi,rivi_id)
+		yhteys.query(muokkaus)
+		testi = yhteys.query("select %s from %s where %s='%s'" % (kentta,taulu,rivi_idn_nimi,rivi_id)).getresult()
+		if len(testi) == 0:
+			return 0
+		elif testi[0][0] == uusi_arvo:
+			return 1
+		else:
+			return 0
 
 
 # Tämän funktion avulla lisätään tietokantaan uusi ooppera.
@@ -825,7 +841,12 @@ def lisaa_kantaan_ryhma():
 			rt = request.GET.get(ryhmantehtava,'').strip()
 
 			if rn != '' and rt != '':
-				lis.lisaa_kantaan_ryhma(yhteys,rn,rt)
+				testi = yhteys.query("select ryhmannimi,ryhmantehtava from ryhma where ryhmannimi = '%s' and ryhmantehtava = '%s'" %(rn,rt)).getresult()
+				if len(testi) > 0:
+					print "Täsmälleen samanniminen ryhmä löytyy jo kannasta, ja sille on myös määritelty sama tehtävä. Jätettiin lisäämättä."
+					continue
+				else:
+					lis.lisaa_kantaan_ryhma(yhteys,rn,rt)
 		yhteys.close()
 		return template('tarkhaku.tpl')
 	else:
@@ -961,7 +982,29 @@ def tulossivu():
 	return output
 
 
+@oop.route('/muokkaussivu',method='GET')
+def muokkaussivu():
+	if request.GET.get('save','').strip():
+		print
+	else:
+		return template('muokkaushaku.tpl')
+@oop.route('login',method='GET')
+def kirjautumissivu():
+	if request.GET.get('save',''):
+		user = request.GET.get('username','').strip()
+		passw = request.GET.get('password','').strip()
+		f = open('.oopuserwords.txt','r')
+		oikein = False
+		for line in f:
+			if user in line and passw in line:
+				oikein = True
+		if not oikein:
+			return template('login.tpl')
+		response.set_cookie("account", user, secret='prtle123456789')
+		return "Welcome %s! You are now logged in." % user + template('pikahaku.tpl')
 
+	else:
+		return template('login.tpl')
 debug(True)
 run(oop,host='localhost',port=8080,reloader = True)
 
