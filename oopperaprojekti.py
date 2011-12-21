@@ -270,7 +270,7 @@ class Lisaaja:
 	
 	# Funktio yhdistää tietokannassa olevan roolin, esityksen ja henkilön toisiinsa
 	def yhdista_rooli_henkilo_esitys(self,yhteys,henkilo_id,rooli_id,esitys_id):
-		lisays = "insert into rse_kombinaatio values('" + henkilo_id + "','" + rooli_id + "','" + esitys_id + "')"
+		lisays = "insert into rse_kombinaatio values('" + rooli_id + "','" + esitys_id + "','" + henkilo_id + "')"
 		yhteys.query(lisays)
 
 class Hakija:
@@ -840,13 +840,50 @@ def yhdista_elementit():
 	if request.GET.get('save','').strip():
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		lis = Lisaaja()
+		roolilkm = (int)(request.GET.get('roolilkm','').strip()) + 1
+		esitys = request.GET.get('esitys_id').strip()
+		for i in range(1,roolilkm):
+			rooli = 'rooli_id' + str(i)
+			henkilo = 'henkilo_id' + str(i)
+			
+			r = request.GET.get(rooli,'').strip()
+			h = request.GET.get(henkilo,'').strip()
+
+			testi = yhteys.query("select * from rse_kombinaatio where rooli_id = '%s' and esitys_id = '%s'" %(r,esitys)).getresult()
+			if len(testi) > 0:
+				print "Roolilla on esityksessä jo esittäjä."
+				continue
+			else:
+				if int(h) > -1:
+					lis.yhdista_rooli_henkilo_esitys(yhteys,h,r,esitys)
+
+		for i in range(1,4):
+			ryhma = 'ryhma' + str(i)
+			r = request.GET.get(ryhma,'').strip()
+			testi = yhteys.query("select * from ryhma_esitys_kombinaatio where ryhma_id = '%s' and esitys_id = '%s'" %(r,esitys)).getresult()
+			if len(testi) > 0:
+				print "Ryhmä on jo merkitty tämän esityksen osatekijäksi."
+				continue
+			else:
+				if int(r) > -1:
+					lis.yhdista_ryhma_esitys(yhteys,r,esitys)
 		yhteys.close()
+
 	elif request.GET.get('Koostamaan','').strip():
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		esitys_id = request.GET.get('esitys_id','').strip()
 		es = yhteys.query("select esitys_id,rooli_id,oopnimi,saveltaja,roolinimi,aaniala,paivamaara from ooppera inner join rooli on (ooppera.ooppera_id=rooli.ooppera_id) inner join oopperaesitys on (ooppera.ooppera_id = oopperaesitys.ooppera_id) where esitys_id = '%s'" % esitys_id).getresult()
+		es_id = 0
+		if len(es) > 0:
+			if len(es[0]) > 0:
+				es_id = es[0][0]
+
+		henk = yhteys.query("select henkilo_id,sukunimi,etunimi,ammatti from henkilo order by sukunimi").getresult()
+		ryhm = yhteys.query("select ryhma_id, ryhmannimi, ryhmantehtava from ryhma order by ryhmannimi").getresult()
 		yhteys.close()
-		return template('koostaminen.tpl', esitys = es)
+		rlkm = len(es)
+		return template('koostaminen.tpl', esitys=es, roolilkm=rlkm, henkilot=henk, esi_id=es_id, ryhmat=ryhm)
+
 	else:
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		es = yhteys.query("select esitys_id,oopnimi,saveltaja,paivamaara from ooppera inner join oopperaesitys on (ooppera.ooppera_id = oopperaesitys.ooppera_id) order by oopnimi").getresult()
