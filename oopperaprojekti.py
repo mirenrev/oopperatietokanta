@@ -812,7 +812,7 @@ def liita_paikkaan_paiva_ooppera():
 
 
 # Tämän funktion avulla lisätään kantaan esiintyjäryhmiä
-@oop.route('lisaa_ryhmia', method='GET')
+@oop.route('/lisaa_ryhmia', method='GET')
 def lisaa_kantaan_ryhma():
 	if request.GET.get('save','').strip():
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
@@ -833,6 +833,26 @@ def lisaa_kantaan_ryhma():
 		ryhmat = yhteys.query('select ryhma_id,ryhmannimi,ryhmantehtava from ryhma order by ryhmannimi').getresult()
 		yhteys.close()
 		return template('lisaa_ryhmia.tpl', rivit=ryhmat)
+
+# Tämä funktio liittää yhteen esitykset, roolit sekä esiintyjät ja taustahenkilöt
+@oop.route('/koosta_esitys', method='GET')
+def yhdista_elementit():
+	if request.GET.get('save','').strip():
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		lis = Lisaaja()
+		yhteys.close()
+	elif request.GET.get('Koostamaan','').strip():
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		esitys_id = request.GET.get('esitys_id','').strip()
+		es = yhteys.query("select esitys_id,rooli_id,oopnimi,saveltaja,roolinimi,aaniala,paivamaara from ooppera inner join rooli on (ooppera.ooppera_id=rooli.ooppera_id) inner join oopperaesitys on (ooppera.ooppera_id = oopperaesitys.ooppera_id) where esitys_id = '%s'" % esitys_id).getresult()
+		yhteys.close()
+		return template('koostaminen.tpl', esitys = es)
+	else:
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		es = yhteys.query("select esitys_id,oopnimi,saveltaja,paivamaara from ooppera inner join oopperaesitys on (ooppera.ooppera_id = oopperaesitys.ooppera_id) order by oopnimi").getresult()
+		yhteys.close()
+		return template('valitse_koostettava.tpl', esitykset = es)
+
 
 # Liitetaan oop-sovellukseen hakusivu.
 
