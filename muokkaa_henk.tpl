@@ -4,7 +4,7 @@
 
 	<body bgcolor="#eeeeee">
 		<p>Navigointi: <a href="/pikahaku">Pikahakuun</a> <a href="/tarkhaku">Tarkennettuun hakuun</a> <a href="/lisaa_ooppera">Siirry lisäämään ooppera</a> <a href="/lisaa_henkiloita">Siirry lisäämään henkilöitä</a> <a href="/lisaa_oopperataloja">Siirry lisäämään oopperataloja</a> <a href="/lisaa_espaiva">Lisää esityspäivä</a> <a href="/lisaa_ryhmia">Lisää ryhmiä</a> <a href="/koosta_esitys">Koosta annetuista tiedoista esitys</a></p>
-        	<h3 align="center">Lisää tietokantaan ooppera ja rooleja</h3>
+        	<h3 align="center">Muokkaa tai poista henkilötietoja</h3>
         	<table width="100%" height="100%" cellspacing="0" cellpadding="10">
                 	<tr valign="top">
                         	<td width="60%" bgcolor="#dddddd" align="center">
@@ -20,7 +20,7 @@
                                         </table>
                                 </td>
                                 <td width="40%" bgcolor="#cccccc" height="100%" align="center">
-                                        <form action="/lisaa_ooppera" method="GET">
+                                        <form action="/muokkaa_henkiloa" method="GET">
                                                 <label for="henkilo"><h6>Valitse muokattavan henkilön tiedot tästä.</h6></label>   
                                                 <select name="henkilo" id="" accesskey="">
                                                         <option value="-1" selected="selected">Valitse:</option>    
@@ -46,7 +46,15 @@
 						<br />
 						<br />
                                                 <input type="submit" name="save" value="save" />
+						<br />
+						<br />
+						<br />
+						<br />
+						<br />
                                                 <hr />
+						<label style="font:caption" for="Poista">Poista valittu henkilö:</label>
+						<br />
+						<input type="submit" name="Poista" value="Poista" /> 
                                         </form>
 			</tr>
 		</table>

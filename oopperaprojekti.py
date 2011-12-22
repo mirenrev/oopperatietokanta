@@ -983,13 +983,75 @@ def tulossivu():
 
 
 @oop.route('/muokkaa_henkiloa',method='GET')
-def muokkaussivu():
+def muokkaaa_henkiloa():
 	if request.GET.get('save','').strip():
-		print
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		henkilo_id = request.GET.get('henkilo','').strip()
+		etunimi = request.GET.get('etunimi','').strip()
+		sukunimi = request.GET.get('sukunimi','').strip()
+		ammatti = request.GET.get('ammatti','').strip()
+		onnistuiko = False
+		if len(etunimi) > 0:
+			yhteys.query("update henkilo set etunimi = '%s' where henkilo_id = '%s'" %(etunimi,henkilo_id))
+			testi = yhteys.query("select etunimi from henkilo where henkilo_id = '%s'" %(henkilo_id)).getresult()
+			if testi[0][0] == etunimi:
+				onnistuiko = True
+		if len(sukunimi) > 0:
+			yhteys.query("update henkilo set sukunimi = '%s' where henkilo_id = '%s'" %(sukunimi,henkilo_id))
+			testi = yhteys.query("select sukunimi from henkilo where henkilo_id = '%s'" %(henkilo_id)).getresult()
+			if testi[0][0] == sukunimi:
+				onnistuiko = True
+			else:
+				onnistuiko = False
+		if len(ammatti) > 0:
+			yhteys.query("update henkilo set ammatti = '%s' where henkilo_id = '%s'" %(ammatti,henkilo_id))
+			testi = yhteys.query("select ammatti from henkilo where henkilo_id = '%s'" %(henkilo_id)).getresult()
+			if testi[0][0] == ammatti:
+				onnistuiko = True
+			else:
+				onnistuiko = False
+
+		return str(onnistuiko)
+
+	elif request.GET.get('Poista','').strip():
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		henkilo_id = request.GET.get('henkilo','').strip()
+		etunimi = yhteys.query("select etunimi from henkilo where henkilo_id = '%s'" %(henkilo_id)).getresult()
+		if len(etunimi) > 0:
+			etunimi = etunimi[0][0]
+		else:
+			etunimi = ''
+		sukunimi = yhteys.query("select sukunimi from henkilo where henkilo_id = '%s'" %(henkilo_id)).getresult()
+		if len (sukunimi) > 0:
+			sukunimi = sukunimi[0][0]
+		else:
+			sukunimi = ''
+		ammatti = yhteys.query("select ammatti from henkilo where henkilo_id = '%s'" %(henkilo_id)).getresult()
+		if len(ammatti) > 0:
+			ammatti = ammatti[0][0]
+		else:
+			ammatti = ''
+		arvo = "( " + etunimi + " " + sukunimi + ', ' + ammatti + ") "
+		_id = 'henkilo_id'
+		taulu = 'henkilo'
+		return template('vahvista_poisto.tpl', _id=_id, _id_arvo=henkilo_id, taulu=taulu, arvo= arvo)
+
+	elif request.GET.get('Vahvista','').strip():
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		henk = request.GET.get('id_arvo','').strip()
+		print henk
+		henk = int(henk)
+		yhteys.query("delete from henkilo where henkilo_id = %s" %(henk))
+		testi = yhteys.query("select henkilo_id from henkilo where henkilo_id = %s" %(henk)).getresult()
+		if len(testi) == 0:
+			return "Poisto onnistui"
+	elif request.GET.get('Peru','').strip():
+		return "Peruit poiston" + template('tarkhaku.tpl')
 	else:
 		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
 		henkilot = yhteys.query("select henkilo_id,etunimi,sukunimi,ammatti from henkilo order by sukunimi").getresult()
 		return template('muokkaa_henk.tpl',rivit=henkilot)
+
 @oop.route('login',method='GET')
 def kirjautumissivu():
 	if request.GET.get('save',''):
