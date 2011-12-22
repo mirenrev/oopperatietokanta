@@ -982,12 +982,14 @@ def tulossivu():
 	return output
 
 
-@oop.route('/muokkaussivu',method='GET')
+@oop.route('/muokkaa_henkiloa',method='GET')
 def muokkaussivu():
 	if request.GET.get('save','').strip():
 		print
 	else:
-		return template('muokkaushaku.tpl')
+		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		henkilot = yhteys.query("select henkilo_id,etunimi,sukunimi,ammatti from henkilo order by sukunimi").getresult()
+		return template('muokkaa_henk.tpl',rivit=henkilot)
 @oop.route('login',method='GET')
 def kirjautumissivu():
 	if request.GET.get('save',''):
