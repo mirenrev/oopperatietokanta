@@ -6,13 +6,19 @@ from bottle import Bottle, route, run, debug, template, request, response, stati
 oop = Bottle()
 
 # Funktio yhdistaa tietokantaan
-def yhdista(tietokanta,isanta,kayttaja,salasana):
-	con = pg.connect(dbname=tietokanta,host=isanta,user=kayttaja,passwd=salasana)
+def yhdista():
+	f = open('.psqlpsswd.txt','r')
+	a = f.read().strip()
+	f.close()
+	con = pg.connect(dbname='oopperatietokanta',host='localhost',user='verneri',passwd=a)
 	return con
 
 # Tämän avulla saadaan db-luokan funktiot käyttöön
-def db_yhteys(tietokanta,isanta,kayttaja,salasana):
-	con = pg.DB(dbname=tietokanta,host=isanta,user=kayttaja,passwd=salasana)
+def db_yhteys():
+	f = open('.psqlpsswd.txt','r')
+	a = f.read().strip()
+	f.close()
+	con = pg.DB(dbname='oopperatietokanta',host='localhost',user='verneri',passwd=a)
 	return con
 
 # Funktion on tarkoitus palauttaa sopivasta syötteestä muokattu sql:lle ymmärrettävä päivämäärä,
@@ -517,7 +523,7 @@ class Hakija:
 		print kyselytaulut
 		print '---------------------------------'
 		# Luodaan sql-kyselyn from-osa. Avuksi tarvitaan PyGreSql-lisäosan db-luokkaa.
-		yht = db_yhteys('oopperatietokanta','localhost','verneri','kissa')
+		yht = db_yhteys()
 		taalta = []
 		def liita_ryhma():
 			taalta.append('\n\tinner join ryhma_esitys_kombinaatio as ryhes ON \n\t\t(ryhes.esitys_id = oopperaesitys.esitys_id) ' +
@@ -705,7 +711,7 @@ def lisaa_kantaan_ooppera():
 		ooppera = request.GET.get('oopnimi','').strip()
 		print ooppera
 		saveltaja = request.GET.get('saveltaja','').strip()
-        	yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+        	yhteys = yhdista()
 		lis = Lisaaja()
 		if ooppera != '':
 			oop_avain = str(lis.lisaa_ooppera(yhteys,ooppera,saveltaja))
@@ -734,7 +740,7 @@ def lisaa_kantaan_ooppera():
 		yhteys.close()
 		return template('tarkhaku.tpl')
 	elif request.GET.get('Rooleihin','').strip():
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		ooppera = request.GET.get('ooppera','').strip()
 		print "Tää on ooppera" + ooppera
 		haku = yhteys.query("select oopnimi,saveltaja,roolinimi,aaniala from ooppera inner join rooli on (ooppera.ooppera_id = rooli.ooppera_id) where ooppera.ooppera_id = " + ooppera).dictresult()
@@ -743,7 +749,7 @@ def lisaa_kantaan_ooppera():
 		roolit.muotoile_tulos(haku)
 		return template('lisaa_rooleja.tpl', rivit = roolit.haelopputulos(), ooppera_id = ooppera)
 	else:
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		oopperat = yhteys.query("select saveltaja, oopnimi, ooppera_id from ooppera order by oopnimi").getresult()
 		yhteys.close()
 		return template('lisaa_ooppera.tpl', rivit = oopperat)
@@ -752,7 +758,7 @@ def lisaa_kantaan_ooppera():
 @oop.route('/lisaa_henkiloita',method='GET')
 def lisaa_kantaan_henkiloita():
 	if request.GET.get('save','').strip():
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		lis = Lisaaja()
 		for i in range(1,23):
 			etunimi = 'etunimi' + str(i)
@@ -767,7 +773,7 @@ def lisaa_kantaan_henkiloita():
 		yhteys.close()
 		return template('tarkhaku.tpl')
 	else:
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		henkilot = yhteys.query("select henkilo_id,sukunimi,etunimi,ammatti from henkilo order by sukunimi").getresult()
 		yhteys.close()
 		return template('lisaa_henkiloita.tpl', rivit = henkilot)
@@ -776,7 +782,7 @@ def lisaa_kantaan_henkiloita():
 @oop.route('/lisaa_oopperataloja',method='GET')
 def lisaa_kantaan_oopperatalo():
 	if request.GET.get('save','').strip():
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		lis = Lisaaja()
 		for i in range(1,6):
 			ooptalonnimi = 'ooptalonnimi' + str(i)
@@ -790,7 +796,7 @@ def lisaa_kantaan_oopperatalo():
 		yhteys.close()
 		return template('tarkhaku.tpl')
 	else:
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		ooptalot = yhteys.query("select talo_id,ooptalonnimi,ooptalonsijainti from oopperatalo order by ooptalonnimi").getresult()
 		yhteys.close
 		return template('lisaa_oopperataloja.tpl', rivit=ooptalot)
@@ -799,7 +805,7 @@ def lisaa_kantaan_oopperatalo():
 @oop.route('/lisaa_espaiva',method='GET')
 def liita_paikkaan_paiva_ooppera():
 	if request.GET.get('save','').strip():
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		lis = Lisaaja()
 		paivamaara = request.GET.get('paivamaara','').strip()
 		paivays = [paivamaara]
@@ -821,7 +827,7 @@ def liita_paikkaan_paiva_ooppera():
 		yhteys.close()
 		return template('tarkhaku.tpl')
 	else:
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		talot = yhteys.query('select talo_id,ooptalonnimi,ooptalonsijainti from oopperatalo order by ooptalonnimi').getresult()
 		oopperat = yhteys.query('select ooppera_id,oopnimi,saveltaja from ooppera order by oopnimi').getresult()
 		return template('lisaa_espaiva.tpl', ooptalot=talot, ooplista=oopperat)
@@ -831,7 +837,7 @@ def liita_paikkaan_paiva_ooppera():
 @oop.route('/lisaa_ryhmia', method='GET')
 def lisaa_kantaan_ryhma():
 	if request.GET.get('save','').strip():
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		lis = Lisaaja()
 		for i in range(1,6):
 			ryhmannimi = 'ryhmannimi' + str(i)
@@ -850,7 +856,7 @@ def lisaa_kantaan_ryhma():
 		yhteys.close()
 		return template('tarkhaku.tpl')
 	else:
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		ryhmat = yhteys.query('select ryhma_id,ryhmannimi,ryhmantehtava from ryhma order by ryhmannimi').getresult()
 		yhteys.close()
 		return template('lisaa_ryhmia.tpl', rivit=ryhmat)
@@ -859,7 +865,7 @@ def lisaa_kantaan_ryhma():
 @oop.route('/koosta_esitys', method='GET')
 def yhdista_elementit():
 	if request.GET.get('save','').strip():
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		lis = Lisaaja()
 		roolilkm = (int)(request.GET.get('roolilkm','').strip()) + 1
 		esitys = request.GET.get('esitys_id').strip()
@@ -891,7 +897,7 @@ def yhdista_elementit():
 		yhteys.close()
 
 	elif request.GET.get('Koostamaan','').strip():
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		esitys_id = request.GET.get('esitys_id','').strip()
 		es = yhteys.query("select esitys_id,rooli_id,oopnimi,saveltaja,roolinimi,aaniala,paivamaara from ooppera inner join rooli on (ooppera.ooppera_id=rooli.ooppera_id) inner join oopperaesitys on (ooppera.ooppera_id = oopperaesitys.ooppera_id) where esitys_id = '%s'" % esitys_id).getresult()
 		es_id = 0
@@ -906,7 +912,7 @@ def yhdista_elementit():
 		return template('koostaminen.tpl', esitys=es, roolilkm=rlkm, henkilot=henk, esi_id=es_id, ryhmat=ryhm)
 
 	else:
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		es = yhteys.query("select esitys_id,oopnimi,saveltaja,paivamaara from ooppera inner join oopperaesitys on (ooppera.ooppera_id = oopperaesitys.ooppera_id) order by oopnimi").getresult()
 		yhteys.close()
 		return template('valitse_koostettava.tpl', esitykset = es)
@@ -918,7 +924,7 @@ def yhdista_elementit():
 def hae_kannasta():
 	if request.GET.get('save','').strip():
 		hakukrit = request.GET.get('haku','').strip().split()
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		pal = Hakija(yhteys,hakukrit) 
 		pal.haekaikesta()
 		output = template('tulostaulukko',rivit=pal.haelopputulos())
@@ -959,7 +965,7 @@ def hae_tarkemmin():
 		
 		#for kentta in hakukrit:
 		#	print kentta	
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		tark = Hakija(yhteys,hakukrit)
 		tark.tarkhaku()
 		output = template('tulostaulukko', rivit = tark.haelopputulos())
@@ -973,7 +979,7 @@ def hae_tarkemmin():
 
 @oop.route('/tulossivu')
 def tulossivu():
-	yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+	yhteys = yhdista()
 	tulos = yhteys.query("select ooppera.ooppera_id,rooli.ooppera_id,oopnimi,saveltaja,roolinimi,aaniala,esiintyja from ooppera inner join rooli ON (ooppera.ooppera_id = rooli.ooppera_id)")
 	pal = tulos.getresult()
 	#print pal
@@ -985,7 +991,7 @@ def tulossivu():
 @oop.route('/muokkaa_henkiloa',method='GET')
 def muokkaaa_henkiloa():
 	if request.GET.get('save','').strip():
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		henkilo_id = request.GET.get('henkilo','').strip()
 		etunimi = request.GET.get('etunimi','').strip()
 		sukunimi = request.GET.get('sukunimi','').strip()
@@ -1014,7 +1020,7 @@ def muokkaaa_henkiloa():
 		return str(onnistuiko)
 
 	elif request.GET.get('Poista','').strip():
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		henkilo_id = request.GET.get('henkilo','').strip()
 		etunimi = yhteys.query("select etunimi from henkilo where henkilo_id = '%s'" %(henkilo_id)).getresult()
 		if len(etunimi) > 0:
@@ -1037,7 +1043,7 @@ def muokkaaa_henkiloa():
 		return template('vahvista_poisto.tpl', _id=_id, _id_arvo=henkilo_id, taulu=taulu, arvo= arvo)
 
 	elif request.GET.get('Vahvista','').strip():
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		henk = request.GET.get('id_arvo','').strip()
 		print henk
 		henk = int(henk)
@@ -1048,7 +1054,7 @@ def muokkaaa_henkiloa():
 	elif request.GET.get('Peru','').strip():
 		return "Peruit poiston" + template('tarkhaku.tpl')
 	else:
-		yhteys = yhdista('oopperatietokanta','localhost','verneri','kissa')
+		yhteys = yhdista()
 		henkilot = yhteys.query("select henkilo_id,etunimi,sukunimi,ammatti from henkilo order by sukunimi").getresult()
 		return template('muokkaa_henk.tpl',rivit=henkilot)
 
@@ -1065,7 +1071,7 @@ def kirjautumissivu():
 		if not oikein:
 			return template('login.tpl')
 		response.set_cookie("account", user, secret='prtle123456789')
-		return "Welcome %s! You are now logged in." % user + template('pikahaku.tpl')
+		return "Tervetuloa oopperatietokantaan %s!" % user + template('pikahaku.tpl')
 
 	else:
 		return template('login.tpl')
